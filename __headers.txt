@@ -1,0 +1,21 @@
+
+Key                     Value                                      
+---                     -----                                      
+Content-Security-Policy default-src 'self'; img-src 'self' blob:...
+X-Content-Type-Options  nosniff                                    
+Referrer-Policy         strict-origin-when-cross-origin            
+Vary                    rsc, next-router-state-tree, next-router...
+x-nextjs-cache          HIT                                        
+x-nextjs-prerender      1,1                                        
+x-nextjs-stale-time     300                                        
+Connection              keep-alive                                 
+Keep-Alive              timeout=5                                  
+Content-Length          14359                                      
+Cache-Control           s-maxage=31536000                          
+Content-Type            text/html; charset=utf-8                   
+Date                    Thu, 28 Aug 2025 10:53:46 GMT              
+ETag                    "i07xovsvzgar7"                            
+X-Powered-By            Next.js                                    
+
+
+

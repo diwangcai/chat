@@ -1,0 +1,13 @@
+﻿{
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp.json",
+  "mcpServers": {
+    "fs-project": {
+      "command": "C:\\nvm4w\\nodejs\\node.exe",
+      "args": [
+        ".\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "--root",
+        "."
+      ]
+    }
+  }
+}

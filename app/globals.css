@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FFFFFF; --fg: #0B0C0F; --muted: #667085; --border: #EEF1F4;
+  --surface: #F8F9FB; --primary: #0A84FF; --success:#22C55E; --danger:#EF4444;
+  --bubble-sent: #F0F2F5; --bubble-sent-fg: #1A1D23;
+  --bubble-recv: #0A84FF; --bubble-recv-fg: #FFFFFF;
+  --radius: 16px; --radius-lg: 20px; --shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+[data-theme="dark"] {
+  --bg: #0B0C0F; --fg: #F5F7FA; --muted: #98A2B3; --border:#1C2330;
+  --surface: #111318; --bubble-sent: #2A2D35; --bubble-sent-fg:#E5E7EB;
+  --bubble-recv: #0A84FF; --bubble-recv-fg:#FFFFFF;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900;
+    background: var(--bg);
+    color: var(--fg);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
+  
+  /* 移动端安全区域 */
+  .safe-area-inset-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-area-inset-top { padding-top: env(safe-area-inset-top); }
+}
+
+@layer components {
+  /* 消息气泡样式 */
+  .message-bubble {
+    @apply max-w-[70%] px-4 py-2 rounded-2xl break-words;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-shadow: var(--shadow);
+  }
+  .message-bubble.sent {
+    @apply ml-auto;
+    background: var(--bubble-sent);
+    color: var(--bubble-sent-fg);
+    border-bottom-right-radius: 0.25rem;
+  }
+  .message-bubble.received {
+    background: var(--bubble-recv);
+    color: var(--bubble-recv-fg);
+    border-bottom-left-radius: 0.25rem;
+  }
+  
+  /* 输入框样式 */
+  .chat-input {
+    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none;
+    min-height: 44px;
+    max-height: 120px;
+  }
+  
+  /* 磨砂玻璃效果 */
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+  
+  /* 按钮样式 */
+  .btn-primary {
+    @apply bg-primary-500 text-white px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:bg-primary-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:bg-gray-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  }
+  
+  /* 图标按钮 */
+  .icon-btn { @apply p-2 rounded-full transition-all duration-200 hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500; }
+  
+  /* 动画类 */
+  .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+  .animate-slide-up { animation: slideUp 0.3s ease-out; }
+  .animate-scale-in { animation: scaleIn 0.2s ease-out; }
+}
+
+@layer utilities {
+  /* 文本选择样式 */
+  .text-selection { @apply selection:bg-primary-200 selection:text-primary-900; }
+  
+  /* 触摸反馈 */
+  .touch-feedback { @apply active:scale-95 transition-transform duration-75; }
+  
+  /* 隐藏滚动条但保持功能 */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+}
