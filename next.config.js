@@ -1,7 +1,4 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const path = require('path')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -15,4 +12,4 @@ const nextConfig = {
   }
 }
 
-export default nextConfig
+module.exports = nextConfig

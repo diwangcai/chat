@@ -239,7 +239,7 @@ export default function ChatPage() {
         // 聊天界面
         <>
           <header className="header safe-area-inset-top">
-            <ChatHeader 
+            <ChatHeader
               conversation={currentConversation || undefined}
               onBack={() => setActiveId('')}
               onInfo={() => setInfoOpen(true)}

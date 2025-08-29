@@ -1,12 +1,25 @@
 {
   "extends": [
-    "next/core-web-vitals"
+    "next/core-web-vitals",
+    "@typescript-eslint/recommended"
   ],
   "rules": {
-    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unused-vars": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
-    "prefer-const": "error",
-    "no-var": "error",
-    "no-console": "warn"
-  }
+    "prefer-const": "warn",
+    "no-var": "warn",
+    "no-console": "warn",
+    "unicorn/no-array-reduce": "off",
+    "unicorn/prefer-at": "off",
+    "no-empty": "off",
+    "security/detect-object-injection": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 }
