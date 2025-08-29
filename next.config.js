@@ -1,32 +1,18 @@
-/** @type {import('next').NextConfig} */
-const path = require('path')
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    domains: ['localhost'],
-    formats: ['image/webp', 'image/avif'],
-  },
+  serverExternalPackages: ['@modelcontextprotocol/server-filesystem'],
   webpack: (config) => {
-    config.module.rules.push({
-      test: /\.(mp4|webm)$/,
-      use: {
-        loader: 'file-loader',
-        options: {
-          publicPath: '/_next/static/videos/',
-          outputPath: 'static/videos/',
-        },
-      },
-    });
-    return config;
-  },
-  outputFileTracingRoot: path.join(__dirname),
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, './')
+    }
+    return config
+  }
 }
 
-module.exports = nextConfig
+export default nextConfig

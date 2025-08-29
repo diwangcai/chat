@@ -9,6 +9,7 @@ import { cn } from '@/utils/cn'
 
 interface EmojiPickerProps {
   onSelect: (emoji: string) => void
+  onClose?: () => void
 }
 
 export default function EmojiPicker({ onSelect }: EmojiPickerProps) {

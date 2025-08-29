@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ChatHeader from '@/components/ChatHeader'
 import MessageList from '@/components/MessageList'
@@ -8,6 +8,7 @@ import MessageInput from '@/components/MessageInput'
 import EmojiPicker from '@/components/EmojiPicker'
 import ImageViewer from '@/components/ImageViewer'
 import ConversationList from '@/components/ConversationList'
+import FriendList from '@/components/FriendList'
 import InfoDrawer from '@/components/InfoDrawer'
 import { Message, User, Conversation } from '@/types/chat'
 import { useEncryption } from '@/hooks/useEncryption'
@@ -21,6 +22,10 @@ export default function ChatPage() {
   const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [currentUser, setCurrentUser] = useState<User>({ id: '1', name: '我', avatar: '/avatars/user1.jpg', isOnline: true })
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [activeTab, setActiveTab] = useState<'chats' | 'contacts' | 'explore'>('chats')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   
   useEffect(() => {
     try {
@@ -91,268 +96,442 @@ export default function ChatPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
   const [infoOpen, setInfoOpen] = useState(false)
-  const [typingText, setTypingText] = useState<string | undefined>(undefined)
   const [replyTo, setReplyTo] = useState<string | null>(null)
 
   // Telegram 风格的加密系统
-  const { isEnabled: isEncryptionEnabled, isEstablishing: isEncryptionEstablishing, error: encryptionError, enable: enableEncryption, disable: disableEncryption, encryptMessage } = useEncryption({ participants: ['1', '2'], autoEnable: !isRuntimeE2E })
+  const { isEnabled: isEncryptionEnabled, isEstablishing: isEncryptionEstablishing, error: encryptionError, enable: enableEncryption, disable: disableEncryption } = useEncryption({ participants: ['1', '2'], autoEnable: !isRuntimeE2E })
 
   // 加载持久化消息或初始化
   useEffect(() => {
-    try {
-      const key = `chat:messages:${activeId}`
-      const raw = localStorage.getItem(key)
-      if (raw) {
-        const arr = JSON.parse(raw) as Message[]
-        const restored: Message[] = arr.map((m) => ({
-          ...m,
-          timestamp: new Date(m.timestamp)
-        }))
-        setMessages(restored)
-        return
-      }
-    } catch (error) {
-      console.error('Failed to load messages:', error)
+    const savedMessages = localStorage.getItem(`messages:${activeId}`)
+    if (savedMessages) {
+      const parsedMessages = JSON.parse(savedMessages)
+      // 将timestamp字符串转换为Date对象
+      const messagesWithDate = parsedMessages.map((_msg: any) => ({
+        ..._msg,
+        timestamp: new Date(_msg.timestamp)
+      }))
+      setMessages(messagesWithDate)
+    } else {
+      // 初始化一些示例消息
+      const initialMessages: Message[] = [
+        {
+          id: '1',
+          content: '你好！',
+          type: 'text',
+          senderId: '2',
+          timestamp: new Date(Date.now() - 1000*60*5),
+          status: 'sent'
+        },
+        {
+          id: '2',
+          content: '苹果级体验真的很丝滑',
+          type: 'text',
+          senderId: '2',
+          timestamp: new Date(Date.now() - 1000*60*3),
+          status: 'sent'
+        },
+        {
+          id: '3',
+          content: '确实很棒！',
+          type: 'text',
+          senderId: '1',
+          timestamp: new Date(Date.now() - 1000*60*1),
+          status: 'sent'
+        }
+      ]
+      setMessages(initialMessages)
     }
-
-    const now = Date.now()
-    const initialMessages: Message[] = [
-      { id: '1', content: '你好！欢迎使用极简聊天室 👋', type: 'text', senderId: '2', timestamp: new Date(now - 20*60*1000), status: 'read' },
-      { id: '2', content: '这个界面设计真的很棒', type: 'text', senderId: '2', timestamp: new Date(now - 19*60*1000), status: 'read' },
-      { id: '3', content: '流畅度也很赞！', type: 'text', senderId: '2', timestamp: new Date(now - 18*60*1000), status: 'read' },
-      { id: '4', content: '谢谢！我们确实花了很多心思', type: 'text', senderId: '1', timestamp: new Date(now - 10*60*1000), status: 'read' },
-      { id: '5', content: '是的，采用了苹果级的设计理念，追求极致的流畅体验 🍎', type: 'text', senderId: '2', timestamp: new Date(now - 5*60*1000), status: 'read' },
-      { id: '6', content: '每个细节都很用心', type: 'text', senderId: '2', timestamp: new Date(now - 1000), status: 'read' }
-    ]
-    if (activeId === 'admin-group') {
-      initialMessages.push({ id: 'sys-1', content: '这是管理员聊天室（演示）', type: 'text', senderId: '100', timestamp: new Date(now - 60*1000), status: 'read' })
-    }
-    setMessages(initialMessages)
   }, [activeId])
 
-  // 持久化当前会话消息
+  // 保存消息到 localStorage
   useEffect(() => {
-    try {
-      const key = `chat:messages:${activeId}`
-      localStorage.setItem(key, JSON.stringify(messages))
-    } catch (error) {
-      console.error('Failed to persist messages:', error)
+    if (messages.length > 0) {
+      // 将Date对象转换为字符串以便存储
+      const messagesForStorage = messages.map(msg => ({
+        ...msg,
+        timestamp: msg.timestamp.toISOString()
+      }))
+      localStorage.setItem(`messages:${activeId}`, JSON.stringify(messagesForStorage))
     }
   }, [messages, activeId])
 
-  // 模拟对方正在输入与来消息（用于演示未读与打字状态/Telegram 行为）
+  // 软键盘处理
   useEffect(() => {
-    const timer = setInterval(() => {
-      const target = conversations[Math.floor(Math.random() * conversations.length)]
-      if (!target) return
-      const other = target.participants.find(p => p.id !== currentUser.id)
-      if (!other) return
-
-      // 打字指示
-      if (target.id === activeId) {
-        setTypingText('对方正在输入…')
-      }
-
-      setTimeout(() => {
-        if (target.id === activeId) {
-          setTypingText(undefined)
-          const autoMessage: Message = { id: (Date.now() + Math.random()).toString(), content: '收到～', type: 'text', senderId: other.id, timestamp: new Date(), status: 'read' }
-          setMessages(prev => [...prev, autoMessage])
-          setConversations(prev => prev.map(c => c.id === target.id ? { ...c, lastMessagePreview: '收到～', updatedAt: new Date().toISOString() } : c))
-        } else {
-          // 非当前会话：仅更新未读计数与预览
-          setConversations(prev => prev.map(c => c.id === target.id ? { ...c, lastMessagePreview: '收到～', updatedAt: new Date().toISOString(), unreadCount: (c.unreadCount || 0) + 1 } : c))
-        }
-      }, 2000)
-    }, 20000)
-
-    return () => clearInterval(timer)
-  }, [activeId, conversations, currentUser.id])
-
-  // 进入会话时清零未读并标记消息为已读
-  useEffect(() => {
-    setConversations(prev => prev.map(c => c.id === activeId ? { ...c, unreadCount: 0 } : c))
-    setMessages(prev => prev.map(m => ({ ...m, status: m.senderId !== currentUser.id ? 'read' as const : m.status })))
-  }, [activeId, currentUser.id])
-
-  const handleSendMessage = async (content: string, type: 'text' | 'image' = 'text') => {
-    try {
-      let messageContent = content
-      if (type === 'text' && isEncryptionEnabled) {
-        try { const encryptedMessage = await encryptMessage(content, currentUser.id); messageContent = JSON.stringify(encryptedMessage) } catch (error) { console.error('加密失败:', error) }
-      }
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        content: messageContent,
-        type,
-        senderId: currentUser.id,
-        timestamp: new Date(),
-        status: 'sending',
-        ...(replyTo ? { replyTo } : {})
-      }
-      setMessages(prev => [...prev, newMessage])
-      setInputValue('')
-      setReplyTo(null)
-      setShowEmojiPicker(false)
-      setTimeout(() => { setMessages(prev => prev.map(msg => msg.id === newMessage.id ? { ...msg, status: 'sent' as const } : msg)) }, 500)
-      setTimeout(() => { setMessages(prev => prev.map(msg => msg.id === newMessage.id ? { ...msg, status: 'delivered' as const } : msg)) }, 1200)
-      setTimeout(() => { setMessages(prev => prev.map(msg => msg.id === newMessage.id ? { ...msg, status: 'read' as const } : msg)) }, 2500)
-      setConversations(prev => prev.map(c => c.id === activeId ? { ...c, lastMessagePreview: type === 'text' ? content : '图片', updatedAt: new Date().toISOString(), unreadCount: 0 } : c))
-
-      // 调用后端假模型以生成回显
-      if (type === 'text') {
-        try {
-          const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ messages: [{ role: 'user', content }] })
+    const handleResize = () => {
+      if (inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
           })
-          if (res.ok) {
-            const data = await res.json()
-            const reply: Message = {
-              id: (Date.now() + Math.random()).toString(),
-              content: String(data.content ?? 'OK'),
-              type: 'text',
-              senderId: '2',
-              timestamp: new Date(),
-              status: 'read'
-            }
-            setMessages(prev => [...prev, reply])
-            setConversations(prev => prev.map(c => c.id === activeId ? { ...c, lastMessagePreview: reply.content, updatedAt: new Date().toISOString() } : c))
-          }
-        } catch (e) {
-          console.error('调用假模型失败', e)
-        }
+        }, 100)
       }
-    } catch (error) { console.error('发送消息失败:', error) }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handleSendMessage = (content: string, type: 'text' | 'image' = 'text') => {
+    if (!content.trim()) return
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      type,
+      senderId: currentUser.id,
+      timestamp: new Date(),
+      status: 'sending'
+    }
+    
+    setMessages(prev => [...prev, newMessage])
+    setInputValue('')
+    
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+      }
+    }, 100)
+  }
+
+  const handleSelectFriend = (friendId: string) => {
+    // 创建与好友的对话
+    const friendConversation: Conversation = {
+      id: `friend-${friendId}`,
+      participants: [
+        currentUser,
+        { id: friendId, name: `用户${friendId}`, isOnline: true }
+      ],
+      unreadCount: 0,
+      isGroup: false,
+      pinned: false,
+      lastMessagePreview: '',
+      updatedAt: new Date().toISOString()
+    }
+    
+    setConversations(prev => [friendConversation, ...prev])
+    setActiveId(`friend-${friendId}`)
+    setShowSidebar(false)
   }
 
   const handleImageSelect = (file: File) => {
     const reader = new FileReader()
     reader.onload = (e) => {
       const imageUrl = e.target?.result as string
-      // 先插入一条 sending 消息，带进度
-      const tempId = 'upload-' + Date.now()
-      const uploading: Message = { id: tempId, content: imageUrl, type: 'image', senderId: currentUser.id, timestamp: new Date(), status: 'sending', uploadProgress: 1 }
-      setMessages(prev => [...prev, uploading])
-
-      // 模拟上传进度
-      let progress = 1
-      const timer = setInterval(() => {
-        progress = Math.min(100, progress + Math.round(Math.random() * 20))
-        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, uploadProgress: progress } : m))
-        if (progress >= 100) {
-          clearInterval(timer)
-          // 上传成功后发送正式消息
-          handleSendMessage(imageUrl, 'image')
-          // 移除占位消息
-          setMessages(prev => prev.filter(m => m.id !== tempId))
-        }
-      }, 300)
-
-      // 5% 概率模拟失败
-      setTimeout(() => {
-        if (Math.random() < 0.05) {
-          clearInterval(timer)
-          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed', uploadProgress: undefined as unknown as number } : m))
-        }
-      }, 2500)
+      handleSendMessage(imageUrl, 'image')
     }
     reader.readAsDataURL(file)
   }
 
-  const retryUpload = (id: string) => {
-    const target = messages.find(m => m.id === id)
-    if (!target) return
-    // 重新触发模拟上传
-    const newId = 'upload-' + Date.now()
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, id: newId, status: 'sending', uploadProgress: 1 } : m))
-    let progress = 1
-    const timer = setInterval(() => {
-      progress = Math.min(100, progress + Math.round(Math.random() * 20))
-      setMessages(prev => prev.map(m => m.id === newId ? { ...m, uploadProgress: progress } : m))
-      if (progress >= 100) {
-        clearInterval(timer)
-        handleSendMessage(target.content, 'image')
-        setMessages(prev => prev.filter(m => m.id !== newId))
-      }
-    }, 300)
+  const retryUpload = (messageId: string) => {
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? { ...m, status: 'sending' } : m
+    ))
   }
-
-  const handleEncryptionToggle = async () => { if (isEncryptionEnabled) { disableEncryption() } else { try { await enableEncryption() } catch (e) { console.error('启用加密失败:', e) } } }
 
   const togglePin = (id: string, pinned: boolean) => setConversations(prev => prev.map(c => c.id === id ? { ...c, pinned } : c))
   const toggleMute = (id: string, muted: boolean) => setConversations(prev => prev.map(c => c.id === id ? { ...c, muted } : c))
 
   return (
-    <div className="flex h-screen" style={{ background: 'var(--surface)' }} data-testid="chat-root">
-      {/* 侧栏 */}
-      <div className="hidden md:flex w-72 flex-col" style={{ background: 'var(--bg)' }}>
-        <ConversationList conversations={conversations} currentUserId={currentUser.id} activeId={activeId} onSelect={(id) => { setActiveId(id); setInfoOpen(false) }} />
-      </div>
+    <div className="app h-screen-mobile">
+      {activeId ? (
+        // 聊天界面
+        <>
+          <header className="header safe-area-inset-top">
+            <ChatHeader 
+              conversation={currentConversation || undefined}
+              onBack={() => setActiveId('')}
+              onInfo={() => setInfoOpen(true)}
+              onMenu={() => setShowSidebar(true)}
+            />
+          </header>
 
-      {/* 主区 */}
-      <div className="flex-1 flex flex-col">
-        {/* 加密状态 */}
-        <div className="px-4 py-2 border-b" style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center justify-between">
-            <EncryptionStatus isEnabled={isEncryptionEnabled} isEstablishing={isEncryptionEstablishing} error={encryptionError ?? ''} onToggle={handleEncryptionToggle} />
-            <button className="icon-btn" onClick={() => setInfoOpen(true)}>详情</button>
-          </div>
-        </div>
-
-        {/* 聊天头部 */}
-        {currentConversation && (
-          <ChatHeader
-            conversation={currentConversation}
-            isEncryptionEnabled={isEncryptionEnabled}
-            isEncryptionEstablishing={isEncryptionEstablishing}
-            typingText={typingText ?? ''}
-            onStartCall={() => router.push('/call')}
-            onStartVideo={() => router.push('/call')}
-            onOpenInfo={() => setInfoOpen(true)}
-          />
-        )}
-
-        {/* 消息列表 */}
-        <div className="flex-1 overflow-hidden">
-          <MessageList 
-            messages={messages} 
-            currentUserId={currentUser.id} 
-            onImageClick={setSelectedImage}
-            onReply={(id) => setReplyTo(id)}
-            onDelete={(id) => setMessages(prev => prev.filter(m => m.id !== id))}
-            onToggleStar={(id) => setMessages(prev => prev.map(m => m.id === id ? { ...m, starred: !m.starred } : m))}
-            onRetry={(id) => retryUpload(id)}
-          />
-        </div>
-
-        {/* 输入区域 */}
-        <div className="relative">
-          {replyTo && (
-            <div className="px-4 py-2 text-xs text-gray-600 flex items-center justify-between border-b" style={{ borderColor: 'var(--border)' }}>
-              <div>回复 · #{replyTo}</div>
-              <button className="text-primary-600" onClick={() => setReplyTo(null)}>取消</button>
+          <main className="main">
+            {/* 加密状态 */}
+            <div className="px-4 py-2 border-b" style={{ background: 'var(--color-bg)', borderColor: 'var(--border-color)' }}>
+              <EncryptionStatus 
+                isEnabled={isEncryptionEnabled}
+                isEstablishing={isEncryptionEstablishing}
+                error={encryptionError || undefined}
+                onEnable={enableEncryption}
+                onDisable={disableEncryption}
+              />
             </div>
-          )}
-          <MessageInput value={inputValue} onChange={setInputValue} onSend={handleSendMessage} onEmojiClick={() => setShowEmojiPicker(!showEmojiPicker)} onImageSelect={handleImageSelect} />
-          <AnimatePresence>
-            {showEmojiPicker && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.2 }} className="absolute bottom-full left-0 right-0 mb-2">
-                <EmojiPicker onSelect={(e) => setInputValue((v) => v + e)} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
 
-      {/* 右侧信息抽屉 */}
-      {currentConversation && (
-        <InfoDrawer open={infoOpen} onClose={() => setInfoOpen(false)} conversation={currentConversation} currentUserId={currentUser.id} onTogglePin={togglePin} onToggleMute={toggleMute} />
+            {/* 消息列表 */}
+            <div ref={messagesContainerRef} className="messages scrollbar-hide">
+              <MessageList
+                messages={messages}
+                currentUserId={currentUser.id}
+                currentUser={currentUser}
+                currentConversation={currentConversation || undefined}
+                onImageClick={setSelectedImage}
+                onReply={(id) => setReplyTo(id)}
+                onDelete={(id) => setMessages(prev => prev.filter(m => m.id !== id))}
+                onToggleStar={(id) => setMessages(prev => prev.map(m => m.id === id ? { ...m, starred: !m.starred } : m))}
+                onRetry={(id) => retryUpload(id)}
+              />
+            </div>
+
+            {/* 输入区域 */}
+            <footer className="footer input-area safe-area-inset-bottom">
+              {replyTo && (
+                <div className="px-4 py-2 text-xs text-gray-600 flex items-center justify-between border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <div>回复 · #{replyTo}</div>
+                  <button className="text-primary-600" onClick={() => setReplyTo(null)}>取消</button>
+                </div>
+              )}
+              <MessageInput 
+                ref={inputRef}
+                value={inputValue} 
+                onChange={setInputValue} 
+                onSend={handleSendMessage} 
+                onEmojiClick={() => setShowEmojiPicker(!showEmojiPicker)} 
+                onImageSelect={handleImageSelect}
+                disabled={isEncryptionEstablishing}
+              />
+            </footer>
+          </main>
+        </>
+      ) : (
+        // 主界面（底部导航）
+        <>
+          {/* 头部 */}
+          <header className="header safe-area-inset-top">
+            <div className="flex items-center justify-between px-4 py-3">
+              <h1 className="text-lg font-semibold text-gray-900">
+                {activeTab === 'chats' && '聊天'}
+                {activeTab === 'contacts' && '联系人'}
+                {activeTab === 'explore' && '探索'}
+              </h1>
+              <button 
+                onClick={() => setShowSidebar(true)}
+                className="icon-btn touch-feedback"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </header>
+
+          {/* 主内容区 */}
+          <main className="main">
+            {activeTab === 'chats' && (
+              <ConversationList
+                conversations={conversations}
+                currentUserId={currentUser.id}
+                onSelect={(id: string) => setActiveId(id)}
+              />
+            )}
+            
+            {activeTab === 'contacts' && (
+              <FriendList
+                currentUserId={currentUser.id}
+                onSelectFriend={handleSelectFriend}
+              />
+            )}
+            
+            {activeTab === 'explore' && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">👑</div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">探索功能</h2>
+                  <p className="text-gray-500 mb-4">暂未开启，等待帝王才开发</p>
+                  <div className="text-sm text-gray-400">敬请期待...</div>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* 底部导航栏 */}
+          <footer className="footer bg-white border-t safe-area-inset-bottom" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="flex items-center justify-around py-2">
+              <button
+                onClick={() => setActiveTab('chats')}
+                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
+                  activeTab === 'chats'
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span className="text-xs font-medium">聊天</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('contacts')}
+                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
+                  activeTab === 'contacts'
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="text-xs font-medium">联系人</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('explore')}
+                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
+                  activeTab === 'explore'
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="text-xs font-medium">探索</span>
+              </button>
+            </div>
+          </footer>
+        </>
       )}
 
+      {/* 移动端侧边栏 */}
+      <AnimatePresence>
+        {showSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setShowSidebar(false)}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              className="fixed left-0 top-0 bottom-0 w-72 bg-white z-50 md:hidden safe-area-inset-left"
+            >
+              {/* 标签切换 */}
+              <div className="flex border-b" style={{ borderColor: 'var(--border-color)' }}>
+                <button
+                  onClick={() => setActiveTab('chats')}
+                  className={`flex-1 py-3 text-center font-medium transition-colors ${
+                    activeTab === 'chats'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  聊天
+                </button>
+                <button
+                  onClick={() => setActiveTab('contacts')}
+                  className={`flex-1 py-3 text-center font-medium transition-colors ${
+                    activeTab === 'contacts'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  联系人
+                </button>
+                <button
+                  onClick={() => setActiveTab('explore')}
+                  className={`flex-1 py-3 text-center font-medium transition-colors ${
+                    activeTab === 'explore'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  探索
+                </button>
+              </div>
+
+              {/* 内容区域 */}
+              <div className="flex-1 overflow-hidden">
+                {activeTab === 'chats' && (
+                  <ConversationList 
+                    conversations={conversations} 
+                    currentUserId={currentUser.id} 
+                    onSelect={(id) => { 
+                      setActiveId(id); 
+                      setInfoOpen(false);
+                      setShowSidebar(false);
+                    }} 
+                  />
+                )}
+                {activeTab === 'contacts' && (
+                  <FriendList
+                    currentUserId={currentUser.id}
+                    onSelectFriend={handleSelectFriend}
+                  />
+                )}
+                {activeTab === 'explore' && (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">👑</div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">探索功能</h2>
+                      <p className="text-gray-500 mb-4">暂未开启，等待帝王才开发</p>
+                      <div className="text-sm text-gray-400">敬请期待...</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 表情选择器 */}
+      <AnimatePresence>
+        {showEmojiPicker && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/20 z-40"
+              onClick={() => setShowEmojiPicker(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom"
+            >
+              <EmojiPicker
+                onSelect={(emoji) => {
+                  setInputValue(prev => prev + emoji)
+                  setShowEmojiPicker(false)
+                }}
+                onClose={() => setShowEmojiPicker(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 右侧信息抽屉 */}
+      <AnimatePresence>
+        {infoOpen && (
+          <InfoDrawer 
+            open={infoOpen}
+            onClose={() => setInfoOpen(false)}
+            conversation={currentConversation || undefined}
+            currentUserId={currentUser.id}
+            onTogglePin={togglePin}
+            onToggleMute={toggleMute}
+          />
+        )}
+      </AnimatePresence>
+
       {/* 图片查看器 */}
-      <AnimatePresence>{selectedImage && (<ImageViewer imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />)}</AnimatePresence>
+      <AnimatePresence>
+        {selectedImage && (
+          <ImageViewer 
+            imageUrl={selectedImage} 
+            onClose={() => setSelectedImage(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

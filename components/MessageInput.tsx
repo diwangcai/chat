@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, forwardRef } from 'react'
 import { motion } from 'framer-motion'
 import { Send, Smile, Image, Paperclip } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
@@ -16,12 +16,12 @@ interface MessageInputProps {
   disabled?: boolean
 }
 
-export default function MessageInput({ value, onChange, onSend, onEmojiClick, onImageSelect, disabled = false }: MessageInputProps) {
-  const [isFocused, setIsFocused] = useState(false)
+const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ value, onChange, onSend, onEmojiClick, onImageSelect, disabled = false }, _ref) => {
+  const [_isFocused, setIsFocused] = useState(false)
   const [composing, setComposing] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const { uploadImage } = useImageUpload()
+  const _fileInputRef = useRef<HTMLInputElement>(null)
+  const { uploadImage: _uploadImage } = useImageUpload()
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -158,4 +158,6 @@ export default function MessageInput({ value, onChange, onSend, onEmojiClick, on
       </div>
     </motion.div>
   )
-}
+})
+
+export default MessageInput

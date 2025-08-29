@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Phone, Video, MoreVertical, ChevronLeft } from 'lucide-react'
 import { Conversation } from '@/types/chat'
@@ -8,7 +7,7 @@ import { Conversation } from '@/types/chat'
 import { EncryptionIndicator } from './EncryptionStatus'
 
 interface ChatHeaderProps {
-  conversation: Conversation
+  conversation?: Conversation
   onBack?: () => void
   isEncryptionEnabled?: boolean
   isEncryptionEstablishing?: boolean
@@ -16,6 +15,8 @@ interface ChatHeaderProps {
   onStartCall?: () => void
   onStartVideo?: () => void
   onOpenInfo?: () => void
+  onInfo?: () => void
+  onMenu?: () => void
 }
 
 export default function ChatHeader({ 
@@ -28,9 +29,9 @@ export default function ChatHeader({
   onStartVideo,
   onOpenInfo
 }: ChatHeaderProps) {
-  const others = conversation.participants.filter(p => p.id !== '1')
+  const others = conversation?.participants.filter(p => p.id !== '1') || []
   const otherParticipant = others[0]
-  const isGroup = conversation.isGroup
+  const isGroup = conversation?.isGroup || false
 
   const renderAvatar = () => {
     if (!isGroup) {
@@ -83,7 +84,7 @@ export default function ChatHeader({
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="font-semibold text-gray-900">
-                  {conversation.isGroup ? conversation.groupName : otherParticipant?.name}
+                  {conversation?.isGroup ? conversation.groupName : otherParticipant?.name}
                 </h1>
                 <EncryptionIndicator 
                   isEnabled={isEncryptionEnabled}

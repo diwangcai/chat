@@ -1,16 +1,22 @@
 import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   test: {
     environment: 'happy-dom',
-    globals: true,
     setupFiles: ['./tests/setup.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', 'tests/chat.spec.ts'],
+    globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './'),
+      '@': path.resolve(__dirname, './'),
     },
   },
 })

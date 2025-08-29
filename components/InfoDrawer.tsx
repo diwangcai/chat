@@ -8,10 +8,10 @@ import { Conversation, User } from '@/types/chat'
 interface InfoDrawerProps {
   open: boolean
   onClose: () => void
-  conversation: Conversation
+  conversation?: Conversation
   currentUserId: string
-  onTogglePin: (id: string, pinned: boolean) => void
-  onToggleMute: (id: string, muted: boolean) => void
+  onTogglePin?: (id: string, pinned: boolean) => void
+  onToggleMute?: (id: string, muted: boolean) => void
 }
 
 const NOTES_KEY = 'chat:conv_notes'
@@ -24,21 +24,21 @@ function saveNotes(map: Record<string, string>) {
 }
 
 export default function InfoDrawer({ open, onClose, conversation, currentUserId, onTogglePin, onToggleMute }: InfoDrawerProps) {
-  const others = useMemo(() => conversation.participants.filter(p => p.id !== currentUserId), [conversation, currentUserId])
+  const others = useMemo(() => conversation?.participants.filter(p => p.id !== currentUserId), [conversation, currentUserId])
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
-  const note = notesMap[conversation.id] || ''
+  const note = notesMap[conversation?.id] || ''
 
   useEffect(() => { setNotesMap(loadNotes()) }, [open])
 
   const handleSaveNote = (value: string) => {
-    const next = { ...notesMap, [conversation.id]: value }
+    const next = { ...notesMap, [conversation?.id]: value }
     setNotesMap(next)
     saveNotes(next)
   }
 
   const handlePinToggle = () => {
     try {
-      onTogglePin(conversation.id, !conversation.pinned)
+      onTogglePin?.(conversation?.id || '', !conversation?.pinned)
     } catch (error) {
       console.error('Failed to toggle pin:', error)
     }
@@ -72,7 +72,7 @@ export default function InfoDrawer({ open, onClose, conversation, currentUserId,
             <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
               <div className="text-sm font-medium text-gray-700 mb-2">成员</div>
               <div className="space-y-2">
-                {others.map((u: User) => (
+                {others?.map((u: User) => (
                   <div key={u.id} className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs font-medium">
                       {u.name?.charAt(0) || 'U'}
@@ -109,15 +109,15 @@ export default function InfoDrawer({ open, onClose, conversation, currentUserId,
                 style={{ borderColor: 'var(--border)' }}
               >
                 <Pin className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-800">{conversation.pinned ? '取消置顶' : '置顶此会话'}</span>
+                <span className="text-sm text-gray-800">{conversation?.pinned ? '取消置顶' : '置顶此会话'}</span>
               </button>
               <button
-                onClick={() => onToggleMute(conversation.id, !(conversation.muted))}
+                onClick={() => onToggleMute?.(conversation?.id || '', !(conversation?.muted))}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded border hover:bg-gray-50"
                 style={{ borderColor: 'var(--border)' }}
               >
-                {conversation.muted ? <Bell className="w-4 h-4 text-gray-600" /> : <BellOff className="w-4 h-4 text-gray-600" />}
-                <span className="text-sm text-gray-800">{conversation.muted ? '取消静音' : '静音此会话'}</span>
+                {conversation?.muted ? <Bell className="w-4 h-4 text-gray-600" /> : <BellOff className="w-4 h-4 text-gray-600" />}
+                <span className="text-sm text-gray-800">{conversation?.muted ? '取消静音' : '静音此会话'}</span>
               </button>
             </div>
           </motion.aside>

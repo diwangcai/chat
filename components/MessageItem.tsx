@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Check, CheckCheck, Lock, Copy, Reply, Star, Trash2 } from 'lucide-react'
-import { Message } from '@/types/chat'
+import { Message, User } from '@/types/chat'
 import { formatMessageTime } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { encryptionManager } from '@/lib/e2ee/manager'
@@ -14,16 +14,37 @@ interface MessageItemProps {
   isLastInGroup: boolean
   onImageClick: (imageUrl: string) => void
   currentUserId: string
+  currentUser?: User
+  participants?: User[]
+  isGroup?: boolean
   onReply?: (messageId: string) => void
   onDelete?: (messageId: string) => void
   onToggleStar?: (messageId: string) => void
   onRetry?: (messageId: string) => void
 }
 
-export default function MessageItem({ message, isOwn, isLastInGroup, onImageClick, onReply, onDelete, onToggleStar, onRetry }: MessageItemProps) {
+export default function MessageItem({ 
+  message, 
+  isOwn, 
+  isLastInGroup, 
+  onImageClick, 
+  currentUserId,
+  currentUser,
+  participants = [],
+  isGroup = false,
+  onReply, 
+  onDelete, 
+  onToggleStar, 
+  onRetry 
+}: MessageItemProps) {
   const [copied, setCopied] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
+
+  // 获取发送者信息
+  const sender = participants.find(p => p.id === message.senderId)
+  const senderName = sender?.name || '未知用户'
+  const isCurrentUser = message.senderId === currentUserId
 
   const renderStatus = () => {
     switch (message.status) {
@@ -85,11 +106,11 @@ export default function MessageItem({ message, isOwn, isLastInGroup, onImageClic
               </div>
             </div>
           )}
-                      {message.status === 'failed' && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <button className="px-3 py-1 bg-white/90 rounded text-xs" onClick={(e) => { e.stopPropagation(); handleRetry() }}>重试</button>
-              </div>
-            )}
+          {message.status === 'failed' && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <button className="px-3 py-1 bg-white/90 rounded text-xs" onClick={(e) => { e.stopPropagation(); handleRetry() }}>重试</button>
+            </div>
+          )}
         </div>
       )
     }
@@ -142,6 +163,13 @@ export default function MessageItem({ message, isOwn, isLastInGroup, onImageClic
         "flex flex-col max-w-[70%]",
         isOwn ? "items-end" : "items-start"
       )}>
+        {/* 群聊时显示发送者姓名 */}
+        {isGroup && !isOwn && (
+          <div className="text-xs text-gray-500 mb-1 px-1">
+            {isCurrentUser ? '我' : senderName}
+          </div>
+        )}
+        
         <motion.div
           animate={copied ? { scale: 1.02 } : { scale: 1 }}
           transition={{ duration: 0.12 }}

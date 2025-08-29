@@ -14,6 +14,8 @@ export interface EncryptionStatusProps {
   isEstablishing: boolean
   error?: string
   onToggle?: () => void
+  onEnable?: () => void
+  onDisable?: () => void
   className?: string
 }
 
