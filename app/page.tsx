@@ -1,556 +1,430 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import ChatHeader from '@/components/ChatHeader'
-import MessageList from '@/components/MessageList'
-import MessageInput from '@/components/MessageInput'
-import EmojiPicker from '@/components/EmojiPicker'
-import ImageViewer from '@/components/ImageViewer'
-import ConversationList from '@/components/ConversationList'
-import FriendList from '@/components/FriendList'
-import InfoDrawer from '@/components/InfoDrawer'
-import { Message, User, Conversation } from '@/types/chat'
-import { useEncryption } from '@/hooks/useEncryption'
-import EncryptionStatus from '@/components/EncryptionStatus'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, AlertCircle } from 'lucide-react'
+import { setCurrentUser } from '@/lib/userStore'
 
-export default function ChatPage() {
-  const isE2E = process.env.NEXT_PUBLIC_E2E === '1'
-  const isAutomation = typeof navigator !== 'undefined' && (navigator as Navigator & { webdriver?: boolean }).webdriver === true
-  const isRuntimeE2E = isE2E || isAutomation
+const STORAGE_KEY = 'chat:user'
+
+interface FormData {
+  username: string
+  email: string
+  password: string
+  confirmPassword: string
+  phone: string
+  isAdmin: boolean
+}
+
+interface ValidationErrors {
+  username?: string
+  email?: string
+  password?: string
+  confirmPassword?: string
+  phone?: string
+}
+
+export default function HomePage() {
   const router = useRouter()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [currentUser, setCurrentUser] = useState<User>({ id: '1', name: '我', avatar: '/avatars/user1.jpg', isOnline: true })
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [activeTab, setActiveTab] = useState<'chats' | 'contacts' | 'explore'>('chats')
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-  
+  const [isLogin, setIsLogin] = useState(true)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState<FormData>({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    isAdmin: false
+  })
+  const [errors, setErrors] = useState<ValidationErrors>({})
+
   useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      router.replace('/chats')
+    }
+  }, [router])
+
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {}
+
+    if (!formData.username.trim()) {
+      newErrors.username = '用户名不能为空'
+    } else if (formData.username.length < 3) {
+      newErrors.username = '用户名至少3个字符'
+    }
+
+    if (!isLogin) {
+      if (!formData.email.trim()) {
+        newErrors.email = '邮箱不能为空'
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = '请输入有效的邮箱地址'
+      }
+
+      if (!formData.password) {
+        newErrors.password = '密码不能为空'
+      } else if (formData.password.length < 6) {
+        newErrors.password = '密码至少6个字符'
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = '两次输入的密码不一致'
+      }
+
+      if (!formData.phone.trim()) {
+        newErrors.phone = '手机号不能为空'
+      } else if (!/^1[3-9]\d{9}$/.test(formData.phone)) {
+        newErrors.phone = '请输入有效的手机号'
+      }
+    } else {
+      if (!formData.password) {
+        newErrors.password = '密码不能为空'
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return
+
+    setIsLoading(true)
+
     try {
-      const raw = localStorage.getItem('chat:user')
-      if (raw) {
-        const u = JSON.parse(raw)
-        setCurrentUser({ id: u.id, name: u.name, isOnline: true, isAdmin: !!u.isAdmin })
-      } else {
-        if (isRuntimeE2E) {
-          const u = { id: 'e2e-user', name: 'E2E用户', isAdmin: false }
-          localStorage.setItem('chat:user', JSON.stringify(u))
-          setCurrentUser({ id: u.id, name: u.name, isOnline: true, isAdmin: false })
-        } else {
-          // 未登录跳转
-          router.replace('/login')
+      // 模拟API调用延迟
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      if (isLogin) {
+        // 登录逻辑
+        const user = {
+          id: Date.now().toString(),
+          name: formData.username,
+          email: formData.email,
+          isAdmin: formData.isAdmin,
+          createdAt: new Date().toISOString()
         }
+        setCurrentUser(user as any)
+        router.replace('/chats')
+      } else {
+        // 注册逻辑
+        const user = {
+          id: Date.now().toString(),
+          name: formData.username,
+          email: formData.email,
+          phone: formData.phone,
+          isAdmin: formData.isAdmin,
+          createdAt: new Date().toISOString()
+        }
+        setCurrentUser(user as any)
+        router.replace('/chats')
       }
     } catch (error) {
-      console.error('Failed to load user data:', error)
+      console.error('Authentication error:', error)
+    } finally {
+      setIsLoading(false)
     }
-  }, [isRuntimeE2E, router])
-
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  useEffect(() => {
-    // 构建基础会话
-    const peer: Conversation = {
-      id: '1',
-      participants: [
-        { ...currentUser },
-        { id: '2', name: '张三', isOnline: true }
-      ],
-      unreadCount: 2,
-      isGroup: false,
-      pinned: false,
-      lastMessagePreview: '苹果级体验真的很丝滑',
-      updatedAt: new Date().toISOString()
-    }
-
-    const convs: Conversation[] = [peer]
-
-    // 管理员群：仅管理员可见，并默认置顶
-    if (currentUser.isAdmin) {
-      const admins: User[] = [
-        { id: '100', name: '管理员A', isOnline: true, isAdmin: true },
-        { id: '101', name: '管理员B', isOnline: false, isAdmin: true },
-        { ...currentUser }
-      ]
-      convs.push({
-        id: 'admin-group',
-        participants: admins,
-        isGroup: true,
-        groupName: '管理员聊天室',
-        unreadCount: 0,
-        muted: false,
-        pinned: true,
-        lastMessagePreview: '欢迎加入管理员群',
-        updatedAt: new Date(Date.now() - 1000*60*30).toISOString()
-      })
-    }
-
-    setConversations(convs)
-  }, [currentUser])
-
-  const [activeId, setActiveId] = useState<string>('1')
-  const currentConversation = useMemo(() => conversations.find(c => c.id === activeId) || null, [conversations, activeId])
-
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [inputValue, setInputValue] = useState('')
-  const [infoOpen, setInfoOpen] = useState(false)
-  const [replyTo, setReplyTo] = useState<string | null>(null)
-
-  // 加密状态管理
-  const [isEncryptionEnabled, setIsEncryptionEnabled] = useState(() => {
-    // 管理员聊天室默认启用加密
-    return activeId === '1' || localStorage.getItem('chat:encryption:enabled') === 'true'
-  })
-  const [isEncryptionEstablishing, setIsEncryptionEstablishing] = useState(false)
-  const [encryptionError, setEncryptionError] = useState<string | null>(null)
-
-  const enableEncryption = () => {
-    setIsEncryptionEstablishing(true)
-    setTimeout(() => {
-      setIsEncryptionEnabled(true)
-      setIsEncryptionEstablishing(false)
-      localStorage.setItem('chat:encryption:enabled', 'true')
-    }, 1000)
   }
 
-  const disableEncryption = () => {
-    setIsEncryptionEnabled(false)
-    localStorage.setItem('chat:encryption:enabled', 'false')
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    // 清除对应字段的错误
+    if (errors[field as keyof ValidationErrors]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
   }
 
-  // 加载持久化消息或初始化
-  useEffect(() => {
-    const savedMessages = localStorage.getItem(`messages:${activeId}`)
-    if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages)
-      // 将timestamp字符串转换为Date对象
-      const messagesWithDate = parsedMessages.map((_msg: any) => ({
-        ..._msg,
-        timestamp: new Date(_msg.timestamp)
-      }))
-      setMessages(messagesWithDate)
-    } else {
-      // 初始化一些示例消息
-      const initialMessages: Message[] = [
-        {
-          id: '1',
-          content: '你好！',
-          type: 'text',
-          senderId: '2',
-          timestamp: new Date(Date.now() - 1000*60*5),
-          status: 'sent'
-        },
-        {
-          id: '2',
-          content: '苹果级体验真的很丝滑',
-          type: 'text',
-          senderId: '2',
-          timestamp: new Date(Date.now() - 1000*60*3),
-          status: 'sent'
-        },
-        {
-          id: '3',
-          content: '确实很棒！',
-          type: 'text',
-          senderId: '1',
-          timestamp: new Date(Date.now() - 1000*60*1),
-          status: 'sent'
-        }
-      ]
-      setMessages(initialMessages)
-    }
-  }, [activeId])
-
-  // 保存消息到 localStorage
-  useEffect(() => {
-    if (messages.length > 0) {
-      // 将Date对象转换为字符串以便存储
-      const messagesForStorage = messages.map(msg => ({
-        ...msg,
-        timestamp: msg.timestamp.toISOString()
-      }))
-      localStorage.setItem(`messages:${activeId}`, JSON.stringify(messagesForStorage))
-    }
-  }, [messages, activeId])
-
-  // 软键盘处理
-  useEffect(() => {
-    const handleResize = () => {
-      if (inputRef.current) {
-        setTimeout(() => {
-          inputRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          })
-        }, 100)
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  const handleSendMessage = (content: string, type: 'text' | 'image' = 'text') => {
-    if (!content.trim()) return
-    
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      type,
-      senderId: currentUser.id,
-      timestamp: new Date(),
-      status: 'sending'
-    }
-    
-    setMessages(prev => [...prev, newMessage])
-    setInputValue('')
-    
-    setTimeout(() => {
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-      }
-    }, 100)
+  const toggleMode = () => {
+    setIsLogin(!isLogin)
+    setErrors({})
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: '',
+      isAdmin: false
+    })
   }
-
-  const handleSelectFriend = (friendId: string) => {
-    // 创建与好友的对话
-    const friendConversation: Conversation = {
-      id: `friend-${friendId}`,
-      participants: [
-        currentUser,
-        { id: friendId, name: `用户${friendId}`, isOnline: true }
-      ],
-      unreadCount: 0,
-      isGroup: false,
-      pinned: false,
-      lastMessagePreview: '',
-      updatedAt: new Date().toISOString()
-    }
-    
-    setConversations(prev => [friendConversation, ...prev])
-    setActiveId(`friend-${friendId}`)
-    setShowSidebar(false)
-  }
-
-  const handleImageSelect = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string
-      handleSendMessage(imageUrl, 'image')
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const retryUpload = (messageId: string) => {
-    setMessages(prev => prev.map(m => 
-      m.id === messageId ? { ...m, status: 'sending' } : m
-    ))
-  }
-
-  const togglePin = (id: string, pinned: boolean) => setConversations(prev => prev.map(c => c.id === id ? { ...c, pinned } : c))
-  const toggleMute = (id: string, muted: boolean) => setConversations(prev => prev.map(c => c.id === id ? { ...c, muted } : c))
 
   return (
-    <div className="app h-screen-mobile">
-      {activeId ? (
-        // 聊天界面
-        <>
-          <header className="header safe-area-inset-top">
-            <ChatHeader
-              conversation={currentConversation || undefined}
-              onBack={() => setActiveId('')}
-              onInfo={() => setInfoOpen(true)}
-              onMenu={() => setShowSidebar(true)}
-            />
-          </header>
-
-          <main className="main">
-            {/* 加密状态 */}
-            <div className="px-4 py-2 border-b" style={{ background: 'var(--color-bg)', borderColor: 'var(--border-color)' }}>
-              <EncryptionStatus 
-                isEnabled={isEncryptionEnabled}
-                isEstablishing={isEncryptionEstablishing}
-                error={encryptionError || undefined}
-                onEnable={enableEncryption}
-                onDisable={disableEncryption}
-              />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="w-full max-w-md">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100"
+        >
+          {/* Logo和标题 */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl text-white font-bold">聊</span>
             </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {isLogin ? '欢迎回来' : '创建账号'}
+            </h1>
+            <p className="text-gray-600">
+              {isLogin ? '登录您的账号继续聊天' : '注册新账号开始聊天之旅'}
+            </p>
+          </div>
 
-            {/* 消息列表 */}
-            <div ref={messagesContainerRef} className="messages scrollbar-hide">
-              <MessageList
-                messages={messages}
-                currentUserId={currentUser.id}
-                currentUser={currentUser}
-                currentConversation={currentConversation || undefined}
-                onImageClick={setSelectedImage}
-                onReply={(id) => setReplyTo(id)}
-                onDelete={(id) => setMessages(prev => prev.filter(m => m.id !== id))}
-                onToggleStar={(id) => setMessages(prev => prev.map(m => m.id === id ? { ...m, starred: !m.starred } : m))}
-                onRetry={(id) => retryUpload(id)}
-              />
-            </div>
-
-            {/* 输入区域 */}
-            <footer className="footer input-area safe-area-inset-bottom">
-              {replyTo && (
-                <div className="px-4 py-2 text-xs text-gray-600 flex items-center justify-between border-b" style={{ borderColor: 'var(--border-color)' }}>
-                  <div>回复 · #{replyTo}</div>
-                  <button className="text-primary-600" onClick={() => setReplyTo(null)}>取消</button>
-                </div>
+          {/* 表单 */}
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
+            {/* 用户名 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                用户名
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    errors.username ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="请输入用户名"
+                />
+              </div>
+              {errors.username && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center mt-2 text-sm text-red-600"
+                >
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.username}
+                </motion.div>
               )}
-              <MessageInput 
-                ref={inputRef}
-                value={inputValue} 
-                onChange={setInputValue} 
-                onSend={handleSendMessage} 
-                onEmojiClick={() => setShowEmojiPicker(!showEmojiPicker)} 
-                onImageSelect={handleImageSelect}
-                disabled={isEncryptionEstablishing}
-              />
-            </footer>
-          </main>
-        </>
-      ) : (
-        // 主界面（底部导航）
-        <>
-          {/* 头部 */}
-          <header className="header safe-area-inset-top">
-            <div className="flex items-center justify-between px-4 py-3">
-              <h1 className="text-lg font-semibold text-gray-900">
-                {activeTab === 'chats' && '聊天'}
-                {activeTab === 'contacts' && '联系人'}
-                {activeTab === 'explore' && '探索'}
-              </h1>
-              <button 
-                onClick={() => setShowSidebar(true)}
-                className="icon-btn touch-feedback"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
             </div>
-          </header>
 
-          {/* 主内容区 */}
-          <main className="main">
-            {activeTab === 'chats' && (
-              <ConversationList
-                conversations={conversations}
-                currentUserId={currentUser.id}
-                onSelect={(id: string) => setActiveId(id)}
-              />
-            )}
-            
-            {activeTab === 'contacts' && (
-              <FriendList
-                currentUserId={currentUser.id}
-                onSelectFriend={handleSelectFriend}
-              />
-            )}
-            
-            {activeTab === 'explore' && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">👑</div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">探索功能</h2>
-                  <p className="text-gray-500 mb-4">暂未开启，等待帝王才开发</p>
-                  <div className="text-sm text-gray-400">敬请期待...</div>
-                </div>
-              </div>
-            )}
-          </main>
-
-          {/* 底部导航栏 */}
-          <footer className="footer bg-white border-t safe-area-inset-bottom" style={{ borderColor: 'var(--border-color)' }}>
-            <div className="flex items-center justify-around py-2">
-              <button
-                onClick={() => setActiveTab('chats')}
-                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
-                  activeTab === 'chats'
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <span className="text-xs font-medium">聊天</span>
-              </button>
-              
-              <button
-                onClick={() => setActiveTab('contacts')}
-                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
-                  activeTab === 'contacts'
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="text-xs font-medium">联系人</span>
-              </button>
-              
-              <button
-                onClick={() => setActiveTab('explore')}
-                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
-                  activeTab === 'explore'
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span className="text-xs font-medium">探索</span>
-              </button>
-            </div>
-          </footer>
-        </>
-      )}
-
-      {/* 移动端侧边栏 */}
-      <AnimatePresence>
-        {showSidebar && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40 md:hidden"
-              onClick={() => setShowSidebar(false)}
-            />
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              className="fixed left-0 top-0 bottom-0 w-72 bg-white z-50 md:hidden safe-area-inset-left"
-            >
-              {/* 标签切换 */}
-              <div className="flex border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <button
-                  onClick={() => setActiveTab('chats')}
-                  className={`flex-1 py-3 text-center font-medium transition-colors ${
-                    activeTab === 'chats'
-                      ? 'text-primary-600 border-b-2 border-primary-600'
-                      : 'text-gray-500'
-                  }`}
+            {/* 邮箱 - 仅注册时显示 */}
+            <AnimatePresence>
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  聊天
-                </button>
-                <button
-                  onClick={() => setActiveTab('contacts')}
-                  className={`flex-1 py-3 text-center font-medium transition-colors ${
-                    activeTab === 'contacts'
-                      ? 'text-primary-600 border-b-2 border-primary-600'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  联系人
-                </button>
-                <button
-                  onClick={() => setActiveTab('explore')}
-                  className={`flex-1 py-3 text-center font-medium transition-colors ${
-                    activeTab === 'explore'
-                      ? 'text-primary-600 border-b-2 border-primary-600'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  探索
-                </button>
-              </div>
-
-              {/* 内容区域 */}
-              <div className="flex-1 overflow-hidden">
-                {activeTab === 'chats' && (
-                  <ConversationList 
-                    conversations={conversations} 
-                    currentUserId={currentUser.id} 
-                    onSelect={(id) => { 
-                      setActiveId(id); 
-                      setInfoOpen(false);
-                      setShowSidebar(false);
-                    }} 
-                  />
-                )}
-                {activeTab === 'contacts' && (
-                  <FriendList
-                    currentUserId={currentUser.id}
-                    onSelectFriend={handleSelectFriend}
-                  />
-                )}
-                {activeTab === 'explore' && (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <div className="text-6xl mb-4">👑</div>
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">探索功能</h2>
-                      <p className="text-gray-500 mb-4">暂未开启，等待帝王才开发</p>
-                      <div className="text-sm text-gray-400">敬请期待...</div>
-                    </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    邮箱
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        errors.email ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="请输入邮箱地址"
+                    />
                   </div>
-                )}
+                  {errors.email && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center mt-2 text-sm text-red-600"
+                    >
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.email}
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 手机号 - 仅注册时显示 */}
+            <AnimatePresence>
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    手机号
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        errors.phone ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="请输入手机号"
+                    />
+                  </div>
+                  {errors.phone && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center mt-2 text-sm text-red-600"
+                    >
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.phone}
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 密码 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                密码
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    errors.password ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder={isLogin ? '请输入密码' : '请设置密码'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              {errors.password && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center mt-2 text-sm text-red-600"
+                >
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.password}
+                </motion.div>
+              )}
+            </div>
 
-      {/* 表情选择器 */}
-      <AnimatePresence>
-        {showEmojiPicker && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 z-40"
-              onClick={() => setShowEmojiPicker(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom"
-            >
-              <EmojiPicker
-                onSelect={(emoji) => {
-                  setInputValue(prev => prev + emoji)
-                  setShowEmojiPicker(false)
-                }}
-                onClose={() => setShowEmojiPicker(false)}
+            {/* 确认密码 - 仅注册时显示 */}
+            <AnimatePresence>
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    确认密码
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="请再次输入密码"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center mt-2 text-sm text-red-600"
+                    >
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.confirmPassword}
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 管理员选项 */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isAdmin"
+                checked={formData.isAdmin}
+                onChange={(e) => handleInputChange('isAdmin', e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <label htmlFor="isAdmin" className="ml-2 text-sm text-gray-700">
+                这是管理员账号
+              </label>
+            </div>
 
-      {/* 右侧信息抽屉 */}
-      <AnimatePresence>
-        {infoOpen && (
-          <InfoDrawer 
-            open={infoOpen}
-            onClose={() => setInfoOpen(false)}
-            conversation={currentConversation || undefined}
-            currentUserId={currentUser.id}
-            onTogglePin={togglePin}
-            onToggleMute={toggleMute}
-          />
-        )}
-      </AnimatePresence>
+            {/* 提交按钮 */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  {isLogin ? '登录中...' : '注册中...'}
+                </div>
+              ) : (
+                isLogin ? '登录' : '注册'
+              )}
+            </button>
+          </form>
 
-      {/* 图片查看器 */}
-      <AnimatePresence>
-        {selectedImage && (
-          <ImageViewer 
-            imageUrl={selectedImage} 
-            onClose={() => setSelectedImage(null)} 
-          />
-        )}
-      </AnimatePresence>
+          {/* 切换模式 */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              {isLogin ? '还没有账号？' : '已有账号？'}
+              <button
+                onClick={toggleMode}
+                className="ml-1 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                {isLogin ? '立即注册' : '立即登录'}
+              </button>
+            </p>
+          </div>
+
+          {/* 其他登录方式 */}
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">或使用以下方式</span>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-medium text-gray-700">微信登录</span>
+              </button>
+              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-medium text-gray-700">QQ登录</span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   )
 }
