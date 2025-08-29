@@ -1,0 +1,5 @@
+[33m8cf04ca[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: 完善服务器端支持E2E测试和性能优化
+[33m5a4c6cb[m feat: 完成E2E测试和性能优化，修复所有布局和编译问题
+[33m5399328[m feat: 优化登录注册功能
+[33mcedcddc[m feat: 首页增加注册和登录功能
+[33m6cb3408[m feat: 优化界面设计和用户体验

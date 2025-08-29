@@ -40,7 +40,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
+      if (raw) {
       router.replace('/chats')
     }
   }, [router])
@@ -105,7 +105,7 @@ export default function HomePage() {
         case 'login': {
           // 登录逻辑
           const loginUser = {
-            id: Date.now().toString(),
+        id: Date.now().toString(),
             name: formData.username,
             email: formData.email,
             isAdmin: false, // 管理员权限由后台控制，用户无法自选
@@ -238,14 +238,14 @@ export default function HomePage() {
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl text-white font-bold">聊</span>
-            </div>
+      </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               {getTitle()}
             </h1>
             <p className="text-gray-600">
               {getSubtitle()}
             </p>
-          </div>
+        </div>
 
           {/* 表单 */}
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
@@ -296,8 +296,8 @@ export default function HomePage() {
                       errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder={viewMode === 'register' ? '请输入邮箱地址' : '请输入注册时的邮箱地址'}
-                  />
-                </div>
+          />
+        </div>
                 {errors.email && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -435,7 +435,7 @@ export default function HomePage() {
           {/* 其他登录方式 - 仅登录时显示 */}
           {viewMode === 'login' && (
             <div className="mt-8">
-              <div className="relative">
+        <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
                 </div>
@@ -453,7 +453,7 @@ export default function HomePage() {
               </div>
             </div>
           )}
-        </motion.div>
+              </motion.div>
       </div>
     </div>
   )
