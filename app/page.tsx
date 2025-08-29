@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react'
 import { setCurrentUser } from '@/lib/userStore'
 
 const STORAGE_KEY = 'chat:user'
@@ -13,8 +13,6 @@ interface FormData {
   email: string
   password: string
   confirmPassword: string
-  phone: string
-  isAdmin: boolean
 }
 
 interface ValidationErrors {
@@ -22,12 +20,13 @@ interface ValidationErrors {
   email?: string
   password?: string
   confirmPassword?: string
-  phone?: string
 }
+
+type ViewMode = 'login' | 'register' | 'forgot-password'
 
 export default function HomePage() {
   const router = useRouter()
-  const [isLogin, setIsLogin] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('login')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -35,9 +34,7 @@ export default function HomePage() {
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    phone: '',
-    isAdmin: false
+    confirmPassword: ''
   })
   const [errors, setErrors] = useState<ValidationErrors>({})
 
@@ -57,32 +54,38 @@ export default function HomePage() {
       newErrors.username = '用户名至少3个字符'
     }
 
-    if (!isLogin) {
-      if (!formData.email.trim()) {
-        newErrors.email = '邮箱不能为空'
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = '请输入有效的邮箱地址'
-      }
+    switch (viewMode) {
+      case 'register':
+        if (!formData.email.trim()) {
+          newErrors.email = '邮箱不能为空'
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+          newErrors.email = '请输入有效的邮箱地址'
+        }
 
-      if (!formData.password) {
-        newErrors.password = '密码不能为空'
-      } else if (formData.password.length < 6) {
-        newErrors.password = '密码至少6个字符'
-      }
+        if (!formData.password) {
+          newErrors.password = '密码不能为空'
+        } else if (formData.password.length < 6) {
+          newErrors.password = '密码至少6个字符'
+        }
 
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = '两次输入的密码不一致'
-      }
+        if (formData.password !== formData.confirmPassword) {
+          newErrors.confirmPassword = '两次输入的密码不一致'
+        }
+        break
 
-      if (!formData.phone.trim()) {
-        newErrors.phone = '手机号不能为空'
-      } else if (!/^1[3-9]\d{9}$/.test(formData.phone)) {
-        newErrors.phone = '请输入有效的手机号'
-      }
-    } else {
-      if (!formData.password) {
-        newErrors.password = '密码不能为空'
-      }
+      case 'login':
+        if (!formData.password) {
+          newErrors.password = '密码不能为空'
+        }
+        break
+
+      case 'forgot-password':
+        if (!formData.email.trim()) {
+          newErrors.email = '邮箱不能为空'
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+          newErrors.email = '请输入有效的邮箱地址'
+        }
+        break
     }
 
     setErrors(newErrors)
@@ -98,29 +101,40 @@ export default function HomePage() {
       // 模拟API调用延迟
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      if (isLogin) {
-        // 登录逻辑
-        const user = {
-          id: Date.now().toString(),
-          name: formData.username,
-          email: formData.email,
-          isAdmin: formData.isAdmin,
-          createdAt: new Date().toISOString()
+      switch (viewMode) {
+        case 'login': {
+          // 登录逻辑
+          const loginUser = {
+            id: Date.now().toString(),
+            name: formData.username,
+            email: formData.email,
+            isAdmin: false, // 管理员权限由后台控制，用户无法自选
+            createdAt: new Date().toISOString()
+          }
+          setCurrentUser(loginUser as any)
+          router.replace('/chats')
+          break
         }
-        setCurrentUser(user as any)
-        router.replace('/chats')
-      } else {
-        // 注册逻辑
-        const user = {
-          id: Date.now().toString(),
-          name: formData.username,
-          email: formData.email,
-          phone: formData.phone,
-          isAdmin: formData.isAdmin,
-          createdAt: new Date().toISOString()
+
+        case 'register': {
+          // 注册逻辑
+          const registerUser = {
+            id: Date.now().toString(),
+            name: formData.username,
+            email: formData.email,
+            isAdmin: false, // 管理员权限由后台控制，用户无法自选
+            createdAt: new Date().toISOString()
+          }
+          setCurrentUser(registerUser as any)
+          router.replace('/chats')
+          break
         }
-        setCurrentUser(user as any)
-        router.replace('/chats')
+
+        case 'forgot-password':
+          // 忘记密码逻辑
+          alert('重置密码链接已发送到您的邮箱，请查收邮件进行密码重置。')
+          setViewMode('login')
+          break
       }
     } catch (error) {
       console.error('Authentication error:', error)
@@ -129,7 +143,7 @@ export default function HomePage() {
     }
   }
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // 清除对应字段的错误
     if (errors[field as keyof ValidationErrors]) {
@@ -137,17 +151,67 @@ export default function HomePage() {
     }
   }
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin)
+  const switchView = (mode: ViewMode) => {
+    setViewMode(mode)
     setErrors({})
     setFormData({
       username: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      phone: '',
-      isAdmin: false
+      confirmPassword: ''
     })
+  }
+
+  const getTitle = () => {
+    switch (viewMode) {
+      case 'login':
+        return '欢迎回来'
+      case 'register':
+        return '创建账号'
+      case 'forgot-password':
+        return '找回密码'
+      default:
+        return '欢迎回来'
+    }
+  }
+
+  const getSubtitle = () => {
+    switch (viewMode) {
+      case 'login':
+        return '登录您的账号继续聊天'
+      case 'register':
+        return '注册新账号开始聊天之旅'
+      case 'forgot-password':
+        return '输入您的邮箱地址，我们将发送重置密码链接'
+      default:
+        return '登录您的账号继续聊天'
+    }
+  }
+
+  const getButtonText = () => {
+    if (isLoading) {
+      switch (viewMode) {
+        case 'login':
+          return '登录中...'
+        case 'register':
+          return '注册中...'
+        case 'forgot-password':
+          return '发送中...'
+        default:
+          return '处理中...'
+      }
+    }
+    
+    switch (viewMode) {
+      case 'login':
+        return '登录'
+      case 'register':
+        return '注册'
+      case 'forgot-password':
+        return '发送重置链接'
+      default:
+        return '登录'
+    }
   }
 
   return (
@@ -159,220 +223,182 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
           className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100"
         >
+          {/* 返回按钮 - 仅在忘记密码页面显示 */}
+          {viewMode === 'forgot-password' && (
+            <button
+              onClick={() => switchView('login')}
+              className="flex items-center text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              返回登录
+            </button>
+          )}
+
           {/* Logo和标题 */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl text-white font-bold">聊</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {isLogin ? '欢迎回来' : '创建账号'}
+              {getTitle()}
             </h1>
             <p className="text-gray-600">
-              {isLogin ? '登录您的账号继续聊天' : '注册新账号开始聊天之旅'}
+              {getSubtitle()}
             </p>
           </div>
 
           {/* 表单 */}
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
-            {/* 用户名 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                用户名
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                    errors.username ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="请输入用户名"
-                />
+            {/* 用户名 - 登录和注册时显示 */}
+            {(viewMode === 'login' || viewMode === 'register') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  用户名
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      errors.username ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="请输入用户名"
+                  />
+                </div>
+                {errors.username && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center mt-2 text-sm text-red-600"
+                  >
+                    <span className="w-4 h-4 mr-1">⚠️</span>
+                    {errors.username}
+                  </motion.div>
+                )}
               </div>
-              {errors.username && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center mt-2 text-sm text-red-600"
-                >
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.username}
-                </motion.div>
-              )}
-            </div>
+            )}
 
-            {/* 邮箱 - 仅注册时显示 */}
-            <AnimatePresence>
-              {!isLogin && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    邮箱
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        errors.email ? 'border-red-300' : 'border-gray-300'
-                      }`}
-                      placeholder="请输入邮箱地址"
-                    />
-                  </div>
-                  {errors.email && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center mt-2 text-sm text-red-600"
-                    >
-                      <AlertCircle className="w-4 h-4 mr-1" />
-                      {errors.email}
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* 手机号 - 仅注册时显示 */}
-            <AnimatePresence>
-              {!isLogin && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    手机号
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        errors.phone ? 'border-red-300' : 'border-gray-300'
-                      }`}
-                      placeholder="请输入手机号"
-                    />
-                  </div>
-                  {errors.phone && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center mt-2 text-sm text-red-600"
-                    >
-                      <AlertCircle className="w-4 h-4 mr-1" />
-                      {errors.phone}
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* 密码 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                密码
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder={isLogin ? '请输入密码' : '请设置密码'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+            {/* 邮箱 - 注册和忘记密码时显示 */}
+            {(viewMode === 'register' || viewMode === 'forgot-password') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  邮箱
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      errors.email ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder={viewMode === 'register' ? '请输入邮箱地址' : '请输入注册时的邮箱地址'}
+                  />
+                </div>
+                {errors.email && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center mt-2 text-sm text-red-600"
+                  >
+                    <span className="w-4 h-4 mr-1">⚠️</span>
+                    {errors.email}
+                  </motion.div>
+                )}
               </div>
-              {errors.password && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center mt-2 text-sm text-red-600"
-                >
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.password}
-                </motion.div>
-              )}
-            </div>
+            )}
+
+            {/* 密码 - 登录和注册时显示 */}
+            {(viewMode === 'login' || viewMode === 'register') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  密码
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      errors.password ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder={viewMode === 'login' ? '请输入密码' : '请设置密码'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center mt-2 text-sm text-red-600"
+                  >
+                    <span className="w-4 h-4 mr-1">⚠️</span>
+                    {errors.password}
+                  </motion.div>
+                )}
+              </div>
+            )}
 
             {/* 确认密码 - 仅注册时显示 */}
-            <AnimatePresence>
-              {!isLogin && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    确认密码
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                      className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                      }`}
-                      placeholder="请再次输入密码"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  {errors.confirmPassword && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center mt-2 text-sm text-red-600"
-                    >
-                      <AlertCircle className="w-4 h-4 mr-1" />
-                      {errors.confirmPassword}
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {viewMode === 'register' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  确认密码
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="请再次输入密码"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center mt-2 text-sm text-red-600"
+                  >
+                    <span className="w-4 h-4 mr-1">⚠️</span>
+                    {errors.confirmPassword}
+                  </motion.div>
+                )}
+              </div>
+            )}
 
-            {/* 管理员选项 */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isAdmin"
-                checked={formData.isAdmin}
-                onChange={(e) => handleInputChange('isAdmin', e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <label htmlFor="isAdmin" className="ml-2 text-sm text-gray-700">
-                这是管理员账号
-              </label>
-            </div>
+            {/* 忘记密码链接 - 仅登录时显示 */}
+            {viewMode === 'login' && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => switchView('forgot-password')}
+                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  忘记密码？
+                </button>
+              </div>
+            )}
 
             {/* 提交按钮 */}
             <button
@@ -383,46 +409,50 @@ export default function HomePage() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  {isLogin ? '登录中...' : '注册中...'}
+                  {getButtonText()}
                 </div>
               ) : (
-                isLogin ? '登录' : '注册'
+                getButtonText()
               )}
             </button>
           </form>
 
           {/* 切换模式 */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              {isLogin ? '还没有账号？' : '已有账号？'}
-              <button
-                onClick={toggleMode}
-                className="ml-1 text-blue-600 hover:text-blue-700 font-medium transition-colors"
-              >
-                {isLogin ? '立即注册' : '立即登录'}
-              </button>
-            </p>
-          </div>
+          {viewMode !== 'forgot-password' && (
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                {viewMode === 'login' ? '还没有账号？' : '已有账号？'}
+                <button
+                  onClick={() => switchView(viewMode === 'login' ? 'register' : 'login')}
+                  className="ml-1 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  {viewMode === 'login' ? '立即注册' : '立即登录'}
+                </button>
+              </p>
+            </div>
+          )}
 
-          {/* 其他登录方式 */}
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+          {/* 其他登录方式 - 仅登录时显示 */}
+          {viewMode === 'login' && (
+            <div className="mt-8">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">或使用以下方式</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">或使用以下方式</span>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+                  <span className="text-sm font-medium text-gray-700">微信登录</span>
+                </button>
+                <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+                  <span className="text-sm font-medium text-gray-700">QQ登录</span>
+                </button>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-                <span className="text-sm font-medium text-gray-700">微信登录</span>
-              </button>
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-                <span className="text-sm font-medium text-gray-700">QQ登录</span>
-              </button>
-            </div>
-          </div>
+          )}
         </motion.div>
       </div>
     </div>
