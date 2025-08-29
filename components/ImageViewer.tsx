@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Download, Share2, ZoomIn, ZoomOut, RotateCw } from 'lucide-react'
-import { cn } from '@/utils/cn'
 
 interface ImageViewerProps {
   imageUrl: string

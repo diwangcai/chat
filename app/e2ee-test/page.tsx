@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useE2EE } from '@/hooks/useE2EE'
+import { useEncryption as _useEncryption } from '@/hooks/useEncryption'
+import { encryptionManager as _encryptionManager } from '@/lib/e2ee/manager'
 import { motion } from 'framer-motion'
-import { Shield, Lock, Unlock, Key, Users, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
+import { Shield, Lock, Unlock, Key, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
 
 export default function E2EETestPage() {
   const [e2eeState, e2eeActions] = useE2EE({

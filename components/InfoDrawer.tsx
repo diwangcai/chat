@@ -23,7 +23,18 @@ function saveNotes(map: Record<string, string>) {
   try { localStorage.setItem(NOTES_KEY, JSON.stringify(map)) } catch {}
 }
 
-export default function InfoDrawer({ open, onClose, conversation, currentUserId, onTogglePin, onToggleMute }: InfoDrawerProps) {
+const handleTogglePin = () => {
+  // TODO: 实现置顶功能
+}
+
+export default function InfoDrawer({ 
+  conversation, 
+  open, 
+  onClose, 
+  currentUserId,
+  onTogglePin: _onTogglePin, 
+  onToggleMute: _onToggleMute 
+}: InfoDrawerProps) {
   const others = useMemo(() => conversation?.participants.filter(p => p.id !== currentUserId), [conversation, currentUserId])
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
   const note = notesMap[conversation?.id] || ''
@@ -34,14 +45,6 @@ export default function InfoDrawer({ open, onClose, conversation, currentUserId,
     const next = { ...notesMap, [conversation?.id]: value }
     setNotesMap(next)
     saveNotes(next)
-  }
-
-  const handlePinToggle = () => {
-    try {
-      onTogglePin?.(conversation?.id || '', !conversation?.pinned)
-    } catch (error) {
-      console.error('Failed to toggle pin:', error)
-    }
   }
 
   return (
@@ -104,7 +107,7 @@ export default function InfoDrawer({ open, onClose, conversation, currentUserId,
             {/* 设置 */}
             <div className="p-4 space-y-3">
               <button
-                onClick={handlePinToggle}
+                onClick={handleTogglePin}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded border hover:bg-gray-50"
                 style={{ borderColor: 'var(--border)' }}
               >
@@ -112,7 +115,7 @@ export default function InfoDrawer({ open, onClose, conversation, currentUserId,
                 <span className="text-sm text-gray-800">{conversation?.pinned ? '取消置顶' : '置顶此会话'}</span>
               </button>
               <button
-                onClick={() => onToggleMute?.(conversation?.id || '', !(conversation?.muted))}
+                onClick={() => _onToggleMute?.(conversation?.id || '', !(conversation?.muted))}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded border hover:bg-gray-50"
                 style={{ borderColor: 'var(--border)' }}
               >

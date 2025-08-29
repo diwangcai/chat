@@ -16,7 +16,7 @@ interface MessageInputProps {
   disabled?: boolean
 }
 
-const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ value, onChange, onSend, onEmojiClick, onImageSelect, disabled = false }, _ref) => {
+const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ value, onChange, onSend, onEmojiClick, onImageSelect, disabled: _disabled = false }, _ref) => {
   const [_isFocused, setIsFocused] = useState(false)
   const [composing, setComposing] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 export default function AdminPage() {
   const router = useRouter()
   const [users, setUsers] = useState(() => getUsers())
-  const me = useMemo(() => getCurrentUser(), [])
+  const _me = useMemo(() => getCurrentUser(), [])
 
   useEffect(() => {
     const cur = getCurrentUser()

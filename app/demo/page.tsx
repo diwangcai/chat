@@ -6,7 +6,7 @@ import { MessageCircle, Zap, Smartphone, Palette, Shield, Globe } from 'lucide-r
 import Link from 'next/link'
 
 export default function DemoPage() {
-  const [activeFeature, setActiveFeature] = useState<string | null>(null)
+  const [_activeFeature, setActiveFeature] = useState('chat')
 
   const features = [
     {

@@ -1,5 +1,5 @@
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
-import zhCN from 'date-fns/locale/zh-CN'
+import zhCN, { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
+
 
 export function formatMessageTime(date: Date): string {
   if (isToday(date)) {

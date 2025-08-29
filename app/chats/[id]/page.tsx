@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from 'react'
 import ChatPage from '@/app/page'
 
 export default function ChatByIdPage() {

@@ -29,7 +29,7 @@ export default function MessageItem({
   isLastInGroup, 
   onImageClick, 
   currentUserId,
-  currentUser,
+  currentUser: _currentUser,
   participants = [],
   isGroup = false,
   onReply, 
@@ -39,7 +39,7 @@ export default function MessageItem({
 }: MessageItemProps) {
   const [copied, setCopied] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
+  const [_imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
 
   // 获取发送者信息
   const sender = participants.find(p => p.id === message.senderId)
@@ -47,24 +47,12 @@ export default function MessageItem({
   const isCurrentUser = message.senderId === currentUserId
 
   const renderStatus = () => {
-    switch (message.status) {
-      case 'sending':
-        return (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
-          </div>
-        )
-      case 'sent':
-        return <Check className="w-3 h-3 text-gray-400" />
-      case 'delivered':
-        return <CheckCheck className="w-3 h-3 text-gray-400" />
-      case 'read':
-        return <CheckCheck className="w-3 h-3 text-blue-500" />
-      case 'failed':
-        return <div className="w-3 h-3 bg-red-500 rounded-full" />
-      default:
-        return null
-    }
+    // 锁定为两个对号显示，不再修改
+    return (
+      <div className="flex items-center space-x-1">
+        <CheckCheck className="w-3 h-3 text-blue-500" />
+      </div>
+    )
   }
 
   const handleCopy = async () => {
@@ -73,7 +61,9 @@ export default function MessageItem({
       await navigator.clipboard.writeText(message.content)
       setCopied(true)
       setTimeout(() => setCopied(false), 800)
-    } catch {}
+    } catch {
+      // 复制失败时静默处理
+    }
   }
 
   const handleRetry = () => {

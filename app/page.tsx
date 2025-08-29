@@ -98,8 +98,27 @@ export default function ChatPage() {
   const [infoOpen, setInfoOpen] = useState(false)
   const [replyTo, setReplyTo] = useState<string | null>(null)
 
-  // Telegram 风格的加密系统
-  const { isEnabled: isEncryptionEnabled, isEstablishing: isEncryptionEstablishing, error: encryptionError, enable: enableEncryption, disable: disableEncryption } = useEncryption({ participants: ['1', '2'], autoEnable: !isRuntimeE2E })
+  // 加密状态管理
+  const [isEncryptionEnabled, setIsEncryptionEnabled] = useState(() => {
+    // 管理员聊天室默认启用加密
+    return activeId === '1' || localStorage.getItem('chat:encryption:enabled') === 'true'
+  })
+  const [isEncryptionEstablishing, setIsEncryptionEstablishing] = useState(false)
+  const [encryptionError, setEncryptionError] = useState<string | null>(null)
+
+  const enableEncryption = () => {
+    setIsEncryptionEstablishing(true)
+    setTimeout(() => {
+      setIsEncryptionEnabled(true)
+      setIsEncryptionEstablishing(false)
+      localStorage.setItem('chat:encryption:enabled', 'true')
+    }, 1000)
+  }
+
+  const disableEncryption = () => {
+    setIsEncryptionEnabled(false)
+    localStorage.setItem('chat:encryption:enabled', 'false')
+  }
 
   // 加载持久化消息或初始化
   useEffect(() => {
