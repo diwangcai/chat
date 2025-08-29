@@ -151,7 +151,7 @@ const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ value
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           )}
           aria-label="发送消息"
-          data-testid="send"
+          data-testid="send-button"
         >
           <Send className="w-5 h-5" />
         </motion.button>

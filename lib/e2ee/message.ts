@@ -4,16 +4,16 @@
  */
 
 import {
-  deriveMessageKey,
-  deriveMediaKey,
   aesGcmEncrypt,
   aesGcmDecrypt,
-  base64ToArrayBuffer,
+  deriveMessageKey,
+  deriveMediaKey,
+  generateRandomBytes,
   arrayBufferToBase64,
-  generateRandomBytes
+  base64ToArrayBuffer
 } from './crypto'
 import { e2eeSessionManager } from './session'
-import type { Session } from './storage'
+// import type { EncryptionSession } from '@/lib/e2ee/session'
 
 export interface EncryptedMessage {
   ciphertext: string // base64 encoded

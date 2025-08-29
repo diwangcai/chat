@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatMessageTime, formatConversationTime, formatRelativeTime, isSameDay, shouldGroupMessages } from '@/utils/date'
+import { formatMessageTime, formatConversationTime as _formatConversationTime, formatRelativeTime as _formatRelativeTime, isSameDay, shouldGroupMessages } from '@/utils/date'
 
 describe('日期工具函数', () => {
   it('应该正确格式化消息时间', () => {

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { createE2EEService, getE2EEService, resetE2EEService, type E2EEServiceConfig } from '@/lib/e2ee/service'
+import { createE2EEService, resetE2EEService, type E2EEServiceConfig } from '@/lib/e2ee/service'
 import type { EncryptedMessage, EncryptedMedia, DecryptionResult } from '@/lib/e2ee/message'
 import type { SessionEstablishmentResult } from '@/lib/e2ee/session'
 

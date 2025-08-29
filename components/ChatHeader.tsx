@@ -66,6 +66,7 @@ export default function ChatHeader({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       className="glass-effect border-b border-gray-200/50 px-4 py-3 safe-area-inset-top"
+      data-testid="chat-header"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">

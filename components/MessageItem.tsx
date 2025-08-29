@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Check, CheckCheck, Lock, Copy, Reply, Star, Trash2 } from 'lucide-react'
+import { CheckCheck, Lock, Copy, Reply, Star, Trash2 } from 'lucide-react'
 import { Message, User } from '@/types/chat'
 import { formatMessageTime } from '@/utils/date'
 import { cn } from '@/utils/cn'
@@ -49,7 +49,7 @@ export default function MessageItem({
   const renderStatus = () => {
     // 锁定为两个对号显示，不再修改
     return (
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center space-x-1" data-testid="message-status">
         <CheckCheck className="w-3 h-3 text-blue-500" />
       </div>
     )
@@ -88,7 +88,23 @@ export default function MessageItem({
     if (message.type === 'image') {
       return (
         <div className="relative cursor-pointer rounded-lg overflow-hidden max-w-xs" onClick={() => onImageClick(message.content)}>
-          <img src={message.content} alt="消息图片" className="w-full h-auto object-cover" loading="lazy" onLoad={handleImageLoad} />
+          <img 
+            src={message.content} 
+            alt="消息图片" 
+            className="w-full h-auto object-cover" 
+            loading="lazy"
+            onLoad={handleImageLoad}
+            onError={(e) => {
+              // 图片加载失败时的处理
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+              target.nextElementSibling?.classList.remove('hidden')
+            }}
+          />
+          {/* 图片加载失败时的占位符 */}
+          <div className="hidden absolute inset-0 bg-gray-100 flex items-center justify-center">
+            <div className="text-gray-400 text-sm">图片加载失败</div>
+          </div>
           {message.status === 'sending' && (
             <div className="absolute inset-0 bg-black/40 flex items-end">
               <div className="w-full h-1 bg-white/30">
@@ -98,7 +114,15 @@ export default function MessageItem({
           )}
           {message.status === 'failed' && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-              <button className="px-3 py-1 bg-white/90 rounded text-xs" onClick={(e) => { e.stopPropagation(); handleRetry() }}>重试</button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleRetry()
+                }}
+                className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+              >
+                重试
+              </button>
             </div>
           )}
         </div>
@@ -148,6 +172,7 @@ export default function MessageItem({
           target.addEventListener('pointercancel', clear, { once: true })
         }
       }}
+      data-testid="message-item"
     >
       <div className={cn(
         "flex flex-col max-w-[70%]",

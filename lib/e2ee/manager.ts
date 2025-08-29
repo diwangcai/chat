@@ -48,14 +48,14 @@ class EncryptionManager {
       this.updateStatus({ isEstablishing: true, error: undefined as unknown as string })
       
       // 生成会话ID
-      const sessionId = this.generateSessionId()
+      const _sessionId = this.generateSessionId()
       
       // 生成共享密钥 (简化版，实际应该使用ECDH)
       const sharedKey = await this.generateSharedKey()
       
       // 创建会话
       const session: EncryptionSession = {
-        id: sessionId,
+        id: _sessionId,
         participants,
         sharedKey,
         createdAt: new Date(),
@@ -64,16 +64,16 @@ class EncryptionManager {
         isActive: true
       }
       
-      this.sessions.set(sessionId, session)
+      this.sessions.set(_sessionId, session)
       this.updateStatus({
         isEnabled: true,
         isEstablishing: false,
-        sessionId,
+        sessionId: _sessionId,
         lastActivity: new Date()
       })
       
       console.log('🔐 端到端加密已启用')
-      return sessionId
+      return _sessionId
     } catch (error) {
       this.updateStatus({
         isEstablishing: false,

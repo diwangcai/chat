@@ -103,7 +103,7 @@ export default function ChatPage() {
     return activeId === '1' || localStorage.getItem('chat:encryption:enabled') === 'true'
   })
   const [isEncryptionEstablishing, setIsEncryptionEstablishing] = useState(false)
-  const [encryptionError, setEncryptionError] = useState<string | null>(null)
+  const [encryptionError, _setEncryptionError] = useState<string | null>(null)
 
   const enableEncryption = () => {
     setIsEncryptionEstablishing(true)

@@ -1,4 +1,5 @@
-import zhCN, { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
+import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
 
 
 export function formatMessageTime(date: Date): string {

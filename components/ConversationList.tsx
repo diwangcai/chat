@@ -36,7 +36,7 @@ export default function ConversationList({ conversations, currentUserId, activeI
   }, [conversations, currentUserId, query])
 
   return (
-    <div className="h-full flex flex-col border-r" style={{ borderColor: 'var(--border)' }}>
+    <div className="h-full flex flex-col border-r" style={{ borderColor: 'var(--border)' }} data-testid="conversation-list">
       {/* 搜索 */}
       <div className="p-3">
         <div className="flex items-center gap-2 bg-white rounded-xl border px-3 py-2 shadow-sm" style={{ borderColor: 'var(--border)' }}>
@@ -58,6 +58,7 @@ export default function ConversationList({ conversations, currentUserId, activeI
           return (
             <Link key={c.id} href={`/chats/${c.id}`} className="block" onClick={() => onSelect(c.id)}>
               <motion.div
+                data-testid="conversation-item"
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}

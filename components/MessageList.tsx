@@ -90,7 +90,7 @@ export default function MessageList({
   }
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="message-list">
       {groupedMessages.map((group, index) => renderMessageGroup(group, index))}
       
       {messages.length === 0 && (

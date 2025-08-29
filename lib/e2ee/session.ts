@@ -6,15 +6,15 @@
 import {
   generateIdentityKeyPair,
   generatePreKeyPair,
-  exportPublicKey,
-  exportPrivateKey,
   importPublicKey,
   importPrivateKey,
+  exportPublicKey,
+  exportPrivateKey,
   deriveSharedSecret,
   hkdf,
   calculateFingerprint,
   arrayBufferToBase64,
-  base64ToArrayBuffer,
+  // base64ToArrayBuffer,
   concatArrayBuffers,
   generateRandomBytes
 } from './crypto'

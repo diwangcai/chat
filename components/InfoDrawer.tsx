@@ -20,11 +20,14 @@ function loadNotes(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '{}') } catch { return {} }
 }
 function saveNotes(map: Record<string, string>) {
-  try { localStorage.setItem(NOTES_KEY, JSON.stringify(map)) } catch {}
+  try { localStorage.setItem(NOTES_KEY, JSON.stringify(map)) } catch (error) {
+    console.warn('Failed to save notes:', error)
+  }
 }
 
 const handleTogglePin = () => {
   // TODO: 实现置顶功能
+  console.log('置顶功能待实现')
 }
 
 export default function InfoDrawer({ 

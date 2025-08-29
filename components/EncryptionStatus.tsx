@@ -97,6 +97,7 @@ export default function EncryptionStatus({
           !isEnabled && !isEstablishing && !error && "bg-gray-50 border-gray-200",
           className
         )}
+        data-testid="encryption-status"
       >
         {renderContent()}
       </motion.div>

@@ -119,7 +119,7 @@ export function revokeImagePreview(url: string): void {
 }
 
 // 检测图片是否包含敏感内容（简单实现）
-export function detectImageContent(canvas: HTMLCanvasElement): Promise<{
+export function detectImageContent(_canvas: HTMLCanvasElement): Promise<{
   hasText: boolean
   hasFace: boolean
   isAppropriate: boolean
