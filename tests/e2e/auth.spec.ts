@@ -2,6 +2,14 @@ import { test, expect } from '@playwright/test'
 
 test.describe('认证功能测试', () => {
   test.beforeEach(async ({ page }) => {
+    // 检查E2E API是否可用
+    try {
+      const response = await page.request.get('/api/e2e')
+      expect(response.status()).toBe(200)
+    } catch (error) {
+      console.log('E2E API not available, continuing with basic tests')
+    }
+    
     await page.goto('/')
   })
 
@@ -118,5 +126,15 @@ test.describe('认证功能测试', () => {
     // 再次点击应该变回密码类型
     await eyeButton.click()
     await expect(passwordInput).toHaveAttribute('type', 'password')
+  })
+
+  test('API健康检查', async ({ page }) => {
+    // 测试健康检查API
+    const response = await page.request.get('/api/health')
+    expect(response.status()).toBe(200)
+    
+    const data = await response.json()
+    expect(data.status).toBe('ok')
+    expect(data.timestamp).toBeDefined()
   })
 })

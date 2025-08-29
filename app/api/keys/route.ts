@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// 内存存储（生产环境应使用数据库）
-const keyStore = new Map<string, {
-  identityKey: any
-  signedPreKey: any
+interface IdentityKey {
+  kty: string
+  crv: string
+  x: string
+  y: string
+  d?: string
+}
+
+interface PreKey {
+  id: string
+  publicKey: IdentityKey
+}
+
+interface UserKeys {
+  identityKey: IdentityKey
+  signedPreKey: IdentityKey
   signedPreKeyId: string
-  oneTimePreKeys: Array<{
-    id: string
-    publicKey: any
-  }>
+  oneTimePreKeys: PreKey[]
   lastUpdated: Date
-}>()
+}
+
+// 内存存储（生产环境应使用数据库）
+const keyStore = new Map<string, UserKeys>()
 
 /**
  * POST /api/keys - 上传用户密钥

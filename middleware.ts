@@ -1,47 +1,49 @@
-import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// 生成高熵 nonce（每请求一份），Edge 运行时无 Buffer，使用 btoa 进行 base64
-function nonce(): string {
-  const bytes = new Uint8Array(16)
-  crypto.getRandomValues(bytes)
-  let binary = ''
-  for (const b of bytes) {
-    binary += String.fromCharCode(b)
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // 添加安全头
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  // 为静态资源添加缓存控制
+  if (request.nextUrl.pathname.startsWith('/_next/static/')) {
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+  } else if (request.nextUrl.pathname.startsWith('/api/')) {
+    // API端点不缓存
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+  } else if (request.nextUrl.pathname.startsWith('/sw.js')) {
+    // Service Worker 缓存策略
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
   }
-  return btoa(binary)
-}
 
-export function middleware(req: NextRequest) {
-  const n = nonce()
+  // E2E测试模式下的特殊处理
+  if (process.env.NEXT_PUBLIC_E2E === '1') {
+    response.headers.set('X-E2E-Mode', 'enabled')
+  }
 
-  // 传递 nonce 给后续 App Router（作为请求头）
-  const requestHeaders = new Headers(req.headers)
-  requestHeaders.set('x-nonce', n)
-
-  const res = NextResponse.next({ request: { headers: requestHeaders } })
-
-  // 严格 CSP：带 nonce 的脚本 + strict-dynamic；连接放开 https/wss
-  const csp = [
-    "default-src 'self'",
-    "img-src 'self' data: blob:",
-    "style-src 'self' 'unsafe-inline'",
-    `script-src 'self' 'nonce-${n}' 'strict-dynamic'`,
-    "connect-src 'self' https: wss:",
-    "font-src 'self' data:",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join('; ')
-
-  res.headers.set('Content-Security-Policy', csp)
-  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  res.headers.set('X-Content-Type-Options', 'nosniff')
-  return res
+  return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    /*
+     * 匹配所有请求路径，除了以下开头的路径：
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 }
 
 
