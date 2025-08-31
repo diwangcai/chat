@@ -102,7 +102,7 @@ export default function MessageItem({
             }}
           />
           {/* 图片加载失败时的占位符 */}
-          <div className="hidden absolute inset-0 bg-gray-100 flex items-center justify-center">
+          <div className="hidden absolute inset-0 bg-gray-100 items-center justify-center">
             <div className="text-gray-400 text-sm">图片加载失败</div>
           </div>
           {message.status === 'sending' && (

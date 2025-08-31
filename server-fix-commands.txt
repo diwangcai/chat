@@ -1,0 +1,42 @@
+# 服务器修复命令列表
+
+## 1. 清理磁盘空间
+df -h
+npm cache clean --force
+sudo apt-get clean
+sudo apt-get autoremove
+sudo journalctl --vacuum-time=7d
+sudo rm -rf /tmp/*
+sudo rm -rf /var/tmp/*
+
+## 2. 安装PM2
+npm install -g pm2
+pm2 --version
+
+## 3. 重新安装项目依赖
+cd /home/shell
+rm -rf node_modules package-lock.json
+npm install --production
+
+## 4. 验证Next.js
+npx next --version
+
+## 5. 构建项目
+npm run build
+
+## 6. 启动应用
+pm2 start npm --name "chat-app" -- start
+
+## 7. 检查状态
+pm2 status
+pm2 logs chat-app
+netstat -tlnp | grep :3000
+
+## 如果仍然有问题，尝试：
+# 使用yarn
+npm install -g yarn
+yarn install --production
+
+# 或使用pnpm
+npm install -g pnpm
+pnpm install --prod

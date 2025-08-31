@@ -50,6 +50,7 @@ git push -u origin main
 ## 📞 需要帮助？
 
 如果遇到问题，请检查：
+
 1. GitHub 用户名是否正确
 2. 网络连接是否正常
 3. Git 是否已安装
