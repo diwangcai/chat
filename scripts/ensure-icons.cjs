@@ -38,7 +38,24 @@ function ensurePng(name) {
   console.log(`[icons] Wrote fallback ${name}`)
 }
 
+function ensureFavicon() {
+  const file = path.join(PUBLIC_DIR, 'favicon.ico')
+  const exists = fs.existsSync(file)
+  if (exists) {
+    console.log('[icons] OK favicon.ico')
+    return
+  }
+  const data = Buffer.from(BLANK_PNG_BASE64, 'base64')
+  fs.mkdirSync(PUBLIC_DIR, { recursive: true })
+  fs.writeFileSync(file, data)
+  console.log('[icons] Wrote fallback favicon.ico')
+}
+
+// 确保所有必要的图标文件存在
 ensurePng('icon-192.png')
 ensurePng('icon-512.png')
+ensureFavicon()
+
+console.log('[icons] All icon files verified')
 
 

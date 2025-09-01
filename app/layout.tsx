@@ -22,9 +22,19 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              window.addEventListener('unhandledrejection', function(e) {
+                var msg = (e && e.reason && (e.reason.message || e.reason)) + ''
+                if (msg && (msg.includes('Loading chunk') || msg.includes('ChunkLoadError'))) {
+                  console.warn('[runtime] chunk load failed, force refresh')
+                  var base = location.pathname + location.search
+                  location.href = base + (base.includes('?') ? '&' : '?') + 'v=' + Date.now()
+                }
+              });
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js')
@@ -40,7 +50,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body className="antialiased">
         {children}
       </body>
     </html>
