@@ -85,7 +85,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased" style={{colorScheme: 'light'}}>
+      <body className="safe-area antialiased bg-bg text-text" style={{colorScheme: 'light'}}>
         {children}
       </body>
     </html>

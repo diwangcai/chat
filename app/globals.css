@@ -1,5 +1,55 @@
 @import '../styles/tokens.css';
 
+/* 统一设计规范 - 8pt基线/圆角/对比度/焦点环/移动端100dvh+安全区 */
+:root {
+  --bg: #F8F8FA;
+  --surface: #FFFFFF;
+  --text: #111827;
+  --subtext: #6B7280;
+  --brand: #0A84FF;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 移动端安全区 + 100dvh 方案 */
+:root {
+  --vh: 100dvh;
+}
+
+.safe-area {
+  min-height: var(--vh);
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* 焦点可见环：2px 品牌色 */
+:where(button, a, input, textarea, [tabindex]) {
+  outline: none;
+}
+
+:where(button, a, input, textarea, [tabindex]):focus-visible {
+  box-shadow: 0 0 0 2px var(--brand);
+  border-radius: 12px;
+}
+
+/* 对比度保障：次要文本 */
+.subtext {
+  color: var(--subtext);
+}
 
 @tailwind base;
 @tailwind components;

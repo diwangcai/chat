@@ -32,6 +32,12 @@ module.exports = {
         'container-xl': {'min': '1280px'},
       },
       colors: {
+        // 统一设计规范颜色
+        bg: "#F8F8FA",
+        surface: "#FFFFFF",
+        text: "#111827",
+        subtext: "#6B7280",
+        brand: "#0A84FF",
         // 设计令牌映射 - 使用CSS变量
         bg: {
           primary: 'var(--bg-primary)',
@@ -98,14 +104,17 @@ module.exports = {
         'float-hover': 'var(--shadow-float-hover)',
         'float-focus': 'var(--shadow-float-focus)',
       },
-      // 间距系统
+      // 间距系统 - 8pt基线
       spacing: {
+        1: "8px", // 8pt 基线
         '18': '4.5rem',
         '88': '22rem',
         '128': '32rem',
       },
-      // 圆角系统
+      // 圆角系统 - 统一规范
       borderRadius: {
+        DEFAULT: "12px",
+        md: "18px",
         '4xl': '2rem',
         '5xl': '2.5rem',
         // 浮空输入框圆角
