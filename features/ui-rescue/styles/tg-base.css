@@ -1,0 +1,180 @@
+/* Telegram UI Rescue - 基础样式重置和隔离 */
+@import './tg-tokens.css';
+
+/* === 基础重置（仅影响 tg- 前缀元素）=== */
+.tg-reset {
+  /* 重置盒模型 */
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  
+  /* 重置字体 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: var(--tg-font-size-base);
+  line-height: var(--tg-line-height-normal);
+  color: var(--tg-text-primary);
+  
+  /* 重置背景 */
+  background: transparent;
+  
+  /* 重置边框 */
+  border: none;
+  outline: none;
+  
+  /* 重置列表 */
+  list-style: none;
+}
+
+/* === 焦点管理 === */
+.tg-focus-visible {
+  outline: var(--tg-focus-ring-width) solid var(--tg-focus-ring-color);
+  outline-offset: var(--tg-focus-ring-offset);
+}
+
+.tg-focus-visible:focus-visible {
+  outline: var(--tg-focus-ring-width) solid var(--tg-focus-ring-color);
+  outline-offset: var(--tg-focus-ring-offset);
+}
+
+/* === 可访问性增强 === */
+.tg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === 移动端优化 === */
+.tg-mobile-optimized {
+  /* 防止双击缩放 */
+  touch-action: manipulation;
+  
+  /* 优化滚动 */
+  -webkit-overflow-scrolling: touch;
+  
+  /* 防止选择文本 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.tg-mobile-optimized input,
+.tg-mobile-optimized textarea {
+  /* 输入框允许选择文本 */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* === 视口高度处理 === */
+.tg-vh-100 {
+  height: var(--tg-vh-100);
+}
+
+.tg-dvh-100 {
+  height: var(--tg-dvh-100);
+}
+
+.tg-svh-100 {
+  height: var(--tg-svh-100);
+}
+
+.tg-lvh-100 {
+  height: var(--tg-lvh-100);
+}
+
+/* === 安全区处理 === */
+.tg-safe-area-top {
+  padding-top: var(--tg-safe-area-inset-top);
+}
+
+.tg-safe-area-right {
+  padding-right: var(--tg-safe-area-inset-right);
+}
+
+.tg-safe-area-bottom {
+  padding-bottom: var(--tg-safe-area-inset-bottom);
+}
+
+.tg-safe-area-left {
+  padding-left: var(--tg-safe-area-inset-left);
+}
+
+.tg-safe-area-all {
+  padding-top: var(--tg-safe-area-inset-top);
+  padding-right: var(--tg-safe-area-inset-right);
+  padding-bottom: var(--tg-safe-area-inset-bottom);
+  padding-left: var(--tg-safe-area-inset-left);
+}
+
+/* === 动画性能优化 === */
+.tg-gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.tg-no-animation {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* === 对比度保护 === */
+.tg-contrast-protected {
+  /* 确保最小对比度 */
+  color: var(--tg-text-primary);
+  background-color: var(--tg-bg-primary);
+}
+
+/* === 响应式断点 === */
+@media (max-width: 640px) {
+  .tg-mobile-only {
+    display: block;
+  }
+  
+  .tg-desktop-only {
+    display: none;
+  }
+}
+
+@media (min-width: 641px) {
+  .tg-mobile-only {
+    display: none;
+  }
+  
+  .tg-desktop-only {
+    display: block;
+  }
+}
+
+/* === 打印样式 === */
+@media print {
+  .tg-no-print {
+    display: none !important;
+  }
+  
+  .tg-print-only {
+    display: block !important;
+  }
+}
+
+/* === 高对比度模式 === */
+@media (prefers-contrast: high) {
+  .tg-high-contrast {
+    border: 2px solid currentColor;
+  }
+}
+
+/* === 减少动画模式 === */
+@media (prefers-reduced-motion: reduce) {
+  .tg-respect-motion {
+    animation: none !important;
+    transition: none !important;
+  }
+}

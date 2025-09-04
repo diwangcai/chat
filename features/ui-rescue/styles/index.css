@@ -1,0 +1,6 @@
+/* Telegram UI Rescue - 样式入口文件 */
+@import './tg-tokens.css';
+@import './tg-base.css';
+
+/* === 组件样式导入 === */
+/* 这些将在创建组件后添加 */

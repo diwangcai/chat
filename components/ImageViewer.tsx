@@ -179,10 +179,12 @@ export default function ImageViewer({ imageUrl, onClose }: ImageViewerProps) {
               transformOrigin: 'center',
             }}
             drag={scale > 1}
-            dragConstraints={{ left: -100, right: 100, top: -100, bottom: 100 }}
+            dragConstraints={{ left: -200, right: 200, top: -200, bottom: 200 }}
             dragElastic={0.1}
             dragMomentum={false}
             onDoubleClick={() => setScale(prev => prev === 1 ? 2 : 1)}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={() => setIsDragging(false)}
           />
         </div>
 

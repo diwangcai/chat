@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useMemo } from 'react'
+import { useRef, useMemo, useImperativeHandle, forwardRef, useLayoutEffect } from 'react'
 import MessageItem from './MessageItem'
 import { Message, User, Conversation } from '@/types/chat'
 
@@ -16,7 +16,12 @@ interface MessageListProps {
   onRetry?: (messageId: string) => void
 }
 
-export default function MessageList({ 
+export type MessageListHandle = {
+  scrollToBottom: () => void
+}
+
+function MessageList(
+{ 
   messages, 
   currentUserId, 
   currentUser,
@@ -26,14 +31,27 @@ export default function MessageList({
   onDelete, 
   onToggleStar, 
   onRetry 
-}: MessageListProps) {
+}: MessageListProps,
+ref: React.Ref<MessageListHandle>
+) {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // 自动滚动到底部
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight
+  // 暴露滚动到底部方法
+  useImperativeHandle(ref, () => ({
+    scrollToBottom: () => {
+      if (!containerRef.current) return
+      // 下一帧再滚动，确保布局完成
+      requestAnimationFrame(() => {
+        if (!containerRef.current) return
+        containerRef.current.scrollTop = containerRef.current.scrollHeight
+      })
     }
+  }), [])
+
+  // 自动滚动到底部（消息变更）
+  useLayoutEffect(() => {
+    if (!containerRef.current) return
+    containerRef.current.scrollTop = containerRef.current.scrollHeight
   }, [messages])
 
   // 分组消息（同一发送者的连续消息为一组）
@@ -90,7 +108,7 @@ export default function MessageList({
   }
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="message-list">
+    <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 scroll-smooth" data-testid="message-list">
       {groupedMessages.map((group, index) => renderMessageGroup(group, index))}
       
       {messages.length === 0 && (
@@ -104,3 +122,5 @@ export default function MessageList({
     </div>
   )
 }
+
+export default forwardRef<MessageListHandle, MessageListProps>(MessageList)

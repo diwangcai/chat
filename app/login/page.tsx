@@ -12,12 +12,14 @@ export default function LoginPage() {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) router.replace('/')
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) router.replace('/')
+    }
   }, [router])
 
   const submit = () => {
-    const user = { id: Date.now().toString(), name: name || '未命名用户', isAdmin, createdAt: new Date().toISOString() }
+    const user = { id: 'user_' + Math.random().toString(36).substr(2, 9), name: name || '未命名用户', isAdmin, createdAt: new Date().toISOString() }
     setCurrentUser(user as any)
     router.replace('/')
   }

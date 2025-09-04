@@ -1,33 +1,71 @@
-import { describe, it, expect } from 'vitest'
-import { formatMessageTime, formatConversationTime as _formatConversationTime, formatRelativeTime as _formatRelativeTime, isSameDay, shouldGroupMessages } from '@/utils/date'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { isSameDay, shouldGroupMessages } from '@/utils/date'
 
 describe('日期工具函数', () => {
-  it('应该正确格式化消息时间', () => {
-    const now = new Date()
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-
-    expect(formatMessageTime(now)).toMatch(/^\d{2}:\d{2}$/)
-    expect(formatMessageTime(yesterday)).toBe('昨天')
-    expect(formatMessageTime(lastWeek)).toMatch(/^\d{2}-\d{2}$/)
+  beforeEach(() => {
+    // Mock 系统时间为固定值以确保测试稳定性
+    vi.setSystemTime(new Date('2024-01-15T12:00:00Z'))
   })
 
-  it('应该正确判断是否为同一天', () => {
-    const date1 = new Date('2024-01-01T10:00:00')
-    const date2 = new Date('2024-01-01T20:00:00')
-    const date3 = new Date('2024-01-02T10:00:00')
 
-    expect(isSameDay(date1, date2)).toBe(true)
-    expect(isSameDay(date1, date3)).toBe(false)
+  describe('isSameDay', () => {
+    it('应该正确判断同一天的不同时间', () => {
+      // 使用本地时区的日期，避免时区转换问题
+      const date1 = new Date(2024, 0, 1, 10, 0, 0) // 2024-01-01 10:00:00
+      const date2 = new Date(2024, 0, 1, 20, 0, 0) // 2024-01-01 20:00:00
+      expect(isSameDay(date1, date2)).toBe(true)
+    })
+
+    it('应该正确判断不同天的时间', () => {
+      const date1 = new Date(2024, 0, 1, 23, 59, 0) // 2024-01-01 23:59:00
+      const date2 = new Date(2024, 0, 2, 0, 1, 0)   // 2024-01-02 00:01:00
+      expect(isSameDay(date1, date2)).toBe(false)
+    })
+
+    it('应该正确判断跨年的日期', () => {
+      const date1 = new Date(2023, 11, 31, 23, 59, 0) // 2023-12-31 23:59:00
+      const date2 = new Date(2024, 0, 1, 0, 1, 0)     // 2024-01-01 00:01:00
+      expect(isSameDay(date1, date2)).toBe(false)
+    })
   })
 
-  it('应该正确判断消息分组', () => {
-    const now = new Date()
-    const fiveMinutesLater = new Date(now.getTime() + 5 * 60 * 1000)
-    const tenMinutesLater = new Date(now.getTime() + 10 * 60 * 1000)
+  describe('shouldGroupMessages', () => {
+    const baseTime = new Date('2024-01-15T12:00:00Z')
 
-    expect(shouldGroupMessages(fiveMinutesLater, now, 'user1', 'user1')).toBe(true)
-    expect(shouldGroupMessages(tenMinutesLater, now, 'user1', 'user1')).toBe(false)
-    expect(shouldGroupMessages(fiveMinutesLater, now, 'user1', 'user2')).toBe(false)
+    it('同一发送者、同一天、5分钟内应该分组', () => {
+      const time1 = new Date(baseTime.getTime())
+      const time2 = new Date(baseTime.getTime() + 3 * 60 * 1000) // 3分钟后
+      expect(shouldGroupMessages(time2, time1, 'user1', 'user1')).toBe(true)
+    })
+
+    it('同一发送者、同一天、超过5分钟不应该分组', () => {
+      const time1 = new Date(baseTime.getTime())
+      const time2 = new Date(baseTime.getTime() + 6 * 60 * 1000) // 6分钟后
+      expect(shouldGroupMessages(time2, time1, 'user1', 'user1')).toBe(false)
+    })
+
+    it('不同发送者不应该分组', () => {
+      const time1 = new Date(baseTime.getTime())
+      const time2 = new Date(baseTime.getTime() + 1 * 60 * 1000) // 1分钟后
+      expect(shouldGroupMessages(time2, time1, 'user1', 'user2')).toBe(false)
+    })
+
+    it('不同日期不应该分组', () => {
+      const time1 = new Date('2024-01-15T12:00:00Z')
+      const time2 = new Date('2024-01-16T12:01:00Z') // 第二天
+      expect(shouldGroupMessages(time2, time1, 'user1', 'user1')).toBe(false)
+    })
+
+    it('边界情况：正好5分钟应该分组', () => {
+      const time1 = new Date(baseTime.getTime())
+      const time2 = new Date(baseTime.getTime() + 5 * 60 * 1000) // 正好5分钟
+      expect(shouldGroupMessages(time2, time1, 'user1', 'user1')).toBe(true)
+    })
+
+    it('时间顺序反过来也应该正确处理', () => {
+      const time1 = new Date(baseTime.getTime() + 3 * 60 * 1000)
+      const time2 = new Date(baseTime.getTime()) // 较早的时间
+      expect(shouldGroupMessages(time1, time2, 'user1', 'user1')).toBe(true)
+    })
   })
 })

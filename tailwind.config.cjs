@@ -1,19 +1,60 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx}",
+    "./hooks/**/*.{js,ts,jsx,tsx}",
+    "./features/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // prefix: 'tg-', // 临时注释以修复@apply指令问题
+  corePlugins: {
+    preflight: false,
+  },
   theme: {
     extend: {
+      // 响应式断点配置
+      screens: {
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+        // 移动端优先断点
+        'mobile': {'max': '767px'},
+        'tablet': {'min': '768px', 'max': '1023px'},
+        'desktop': {'min': '1024px'},
+        // 容器查询断点
+        'container-sm': {'min': '640px'},
+        'container-md': {'min': '768px'},
+        'container-lg': {'min': '1024px'},
+        'container-xl': {'min': '1280px'},
+      },
       colors: {
-        // 设计令牌映射
-        bg: 'var(--bg)',
-        fg: 'var(--fg)',
-        muted: 'var(--muted)',
-        border: 'var(--border)',
-        surface: 'var(--surface)',
+        // 设计令牌映射 - 使用CSS变量
+        bg: {
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          tertiary: 'var(--bg-tertiary)',
+        },
+        text: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          tertiary: 'var(--text-tertiary)',
+          inverse: 'var(--text-inverse)',
+        },
+        border: {
+          DEFAULT: 'var(--border)',
+          light: 'var(--border-light)',
+          medium: 'var(--border-medium)',
+          dark: 'var(--border-dark)',
+        },
+        ring: {
+          DEFAULT: 'var(--ring)',
+          light: 'var(--ring-light)',
+          dark: 'var(--ring-dark)',
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
@@ -45,6 +86,51 @@ module.exports = {
           sentText: 'var(--bubble-sent-fg)',
           receivedText: 'var(--bubble-recv-fg)'
         }
+      },
+      // 阴影系统
+      boxShadow: {
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+        // 浮空效果阴影
+        'float': 'var(--shadow-float)',
+        'float-hover': 'var(--shadow-float-hover)',
+        'float-focus': 'var(--shadow-float-focus)',
+      },
+      // 间距系统
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem',
+      },
+      // 圆角系统
+      borderRadius: {
+        '4xl': '2rem',
+        '5xl': '2.5rem',
+        // 浮空输入框圆角
+        '2xl': 'var(--radius-2xl)', // 24px
+        '3xl': 'var(--radius-3xl)', // 28px
+      },
+      // 动画系统
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        // 浮空效果动画
+        'spring': 'var(--transition-spring)',
+        'bounce': 'var(--transition-bounce)',
+      },
+      // 关键帧
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideIn: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -112,5 +198,11 @@ module.exports = {
       },
     },
   },
+  safelist: [
+    // 边框 & 圆角 & 阴影常用
+    'border','border-0','border-2','border-gray-100','border-gray-200','border-gray-300',
+    'rounded','rounded-md','rounded-lg','rounded-xl',
+    'shadow','shadow-sm','shadow-md','shadow-lg',
+  ],
   plugins: [],
 }

@@ -8,6 +8,7 @@ import { EncryptionIndicator } from './EncryptionStatus'
 
 interface ChatHeaderProps {
   conversation?: Conversation
+  currentUserId?: string
   onBack?: () => void
   isEncryptionEnabled?: boolean
   isEncryptionEstablishing?: boolean
@@ -21,15 +22,18 @@ interface ChatHeaderProps {
 
 export default function ChatHeader({ 
   conversation, 
+  currentUserId,
   onBack, 
   isEncryptionEnabled = false,
   isEncryptionEstablishing = false,
   typingText,
   onStartCall,
   onStartVideo,
-  onOpenInfo
+  onOpenInfo,
+  onInfo
 }: ChatHeaderProps) {
-  const others = conversation?.participants.filter(p => p.id !== '1') || []
+  const me = currentUserId ?? '1'
+  const others = conversation?.participants.filter(p => p.id !== me) || []
   const otherParticipant = others[0]
   const isGroup = conversation?.isGroup || false
 
@@ -104,7 +108,10 @@ export default function ChatHeader({
           <button className="icon-btn touch-feedback" onClick={onStartVideo}>
             <Video className="w-5 h-5" />
           </button>
-          <button className="icon-btn touch-feedback" onClick={onOpenInfo}>
+          <button
+            className="icon-btn touch-feedback"
+            onClick={() => (typeof (onInfo as any) === 'function' ? (onInfo as any)() : onOpenInfo?.())}
+          >
             <MoreVertical className="w-5 h-5" />
           </button>
         </div>
@@ -112,3 +119,4 @@ export default function ChatHeader({
     </motion.div>
   )
 }
+

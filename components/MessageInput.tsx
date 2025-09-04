@@ -2,9 +2,7 @@
 
 import { useState, useRef, useCallback, forwardRef } from 'react'
 import { motion } from 'framer-motion'
-import { Send, Smile, Image, Paperclip } from 'lucide-react'
-import { useImageUpload } from '@/hooks/useImageUpload'
-import { useDropzone } from 'react-dropzone'
+import { Send, Smile, Plus } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
 interface MessageInputProps {
@@ -12,28 +10,25 @@ interface MessageInputProps {
   onChange: (value: string) => void
   onSend: (content: string, type?: 'text' | 'image') => void
   onEmojiClick: () => void
-  onImageSelect: (file: File) => void
+  onPlusClick: () => void
   disabled?: boolean
+  isSending?: boolean
 }
 
-const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ value, onChange, onSend, onEmojiClick, onImageSelect, disabled: _disabled = false }, _ref) => {
-  const [_isFocused, setIsFocused] = useState(false)
+const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ 
+  value, 
+  onChange, 
+  onSend, 
+  onEmojiClick, 
+  onPlusClick, 
+  disabled: _disabled = false,
+  isSending = false
+}, _ref) => {
+  const [isFocused, setIsFocused] = useState(false)
   const [composing, setComposing] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const _fileInputRef = useRef<HTMLInputElement>(null)
-  const { uploadImage: _uploadImage } = useImageUpload()
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
-    },
-    multiple: false,
-    onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        if (acceptedFiles[0]) onImageSelect(acceptedFiles[0])
-      }
-    }
-  })
 
   const handleSend = useCallback(() => {
     if (value.trim()) {
@@ -50,114 +45,104 @@ const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(({ value
 
   const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value)
+    setIsTyping(true)
 
-    // 自动调整高度
+    // 自动调整高度 - 适配新的最大高度
     const textarea = e.target
     textarea.style.height = 'auto'
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+    textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px'
+
+    // 清除打字状态
+    setTimeout(() => setIsTyping(false), 1000)
   }, [onChange])
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-effect border-t border-gray-200/50 px-4 py-3 safe-area-inset-bottom"
+      className="px-4 py-3 safe-area-inset-bottom"
     >
-      <div className="flex items-end space-x-2">
-        {/* 附件按钮 */}
-        <div {...getRootProps()} className="relative">
-          <input {...getInputProps()} />
+      {/* 统一的输入框容器 */}
+      <div className="unified-input-container">
+        <div 
+          className={cn(
+            "input-wrapper transition-combined",
+            isFocused && "ring-2 ring-blue-500 border-transparent",
+            isHovered && "hover-state",
+            isTyping && "typing-state"
+          )}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {/* Plus按钮 - 左侧 */}
           <button
             type="button"
-            className={cn(
-              "icon-btn touch-feedback",
-              isDragActive && "bg-primary-100 text-primary-600"
-            )}
-            aria-label="拖拽上传文件"
+            onClick={onPlusClick}
+            className="input-button left transition-combined hover-scale focus-ring"
+            aria-label="打开附件面板"
           >
-            <Paperclip className="w-5 h-5" />
+            <Plus className="w-5 h-5" />
           </button>
-          {isDragActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-primary-500/20 rounded-full"
-            />
-          )}
-        </div>
 
-        {/* 图片按钮 */}
-        <button
-          type="button"
-          onClick={() => document.getElementById('image-input')?.click()}
-          className="icon-btn touch-feedback"
-          aria-label="选择图片"
-        >
-          <Image className="w-5 h-5" />
-        </button>
-        <input
-          id="image-input"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) {
-              onImageSelect(file)
-            }
-          }}
-        />
 
-        {/* 输入框 */}
-        <div className="flex-1 relative">
+
+          {/* 主输入框 */}
           <textarea
             ref={textareaRef}
             value={value}
             onChange={handleTextareaChange}
             onCompositionStart={() => setComposing(true)}
-            onCompositionEnd={(e) => { setComposing(false); onChange((e.currentTarget as HTMLTextAreaElement).value) }}
+            onCompositionEnd={(e) => { 
+              setComposing(false)
+              onChange((e.currentTarget as HTMLTextAreaElement).value) 
+            }}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder="输入消息..."
-            className="chat-input"
+            className="unified-input transition-combined input-focus"
             rows={1}
-            style={{ minHeight: '44px', maxHeight: '120px' }}
             aria-label="消息输入框"
             data-testid="chat-input"
           />
+
+          {/* 表情按钮 - 右侧 */}
+          <button
+            type="button"
+            onClick={onEmojiClick}
+            className="input-button right transition-combined hover-scale focus-ring"
+            aria-label="打开表情选择器"
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+
+          {/* 发送按钮 - 最右侧 */}
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!value.trim() || isSending}
+            className="send-button transition-combined hover-scale focus-ring"
+            aria-label="发送消息"
+            data-testid="send-button"
+          >
+            {isSending ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+              />
+            ) : (
+              <div className={`transition-transform ${value.trim() ? 'rotate-0' : 'rotate-45'}`}>
+                <Send className="w-5 h-5" />
+              </div>
+            )}
+          </button>
         </div>
-
-        {/* 表情按钮 */}
-        <button
-          type="button"
-          onClick={onEmojiClick}
-          className="icon-btn touch-feedback"
-          aria-label="打开表情选择器"
-        >
-          <Smile className="w-5 h-5" />
-        </button>
-
-        {/* 发送按钮 */}
-        <motion.button
-          type="button"
-          onClick={handleSend}
-          disabled={!value.trim()}
-          whileTap={{ scale: 0.95 }}
-          className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
-            value.trim()
-              ? "bg-primary-500 text-white hover:bg-primary-600"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
-          )}
-          aria-label="发送消息"
-          data-testid="send-button"
-        >
-          <Send className="w-5 h-5" />
-        </motion.button>
       </div>
     </motion.div>
   )
 })
+
+MessageInput.displayName = 'MessageInput'
 
 export default MessageInput

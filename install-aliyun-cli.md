@@ -15,7 +15,7 @@ choco install aliyun-cli
 
 ### 方法2: 手动下载安装
 
-1. 访问：https://github.com/aliyun/aliyun-cli/releases
+1. 访问：<https://github.com/aliyun/aliyun-cli/releases>
 2. 下载最新版本的Windows安装包
 3. 解压到 `C:\Program Files\aliyun-cli\`
 4. 将 `C:\Program Files\aliyun-cli\` 添加到系统PATH环境变量

@@ -39,9 +39,11 @@ export default function HomePage() {
   const [errors, setErrors] = useState<ValidationErrors>({})
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
-      router.replace('/chats')
+        router.replace('/chats')
+      }
     }
   }, [router])
 

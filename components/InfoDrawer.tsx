@@ -44,6 +44,18 @@ export default function InfoDrawer({
 
   useEffect(() => { setNotesMap(loadNotes()) }, [open])
 
+  // ESC键关闭功能
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   const handleSaveNote = (value: string) => {
     const next = { ...notesMap, [conversation?.id]: value }
     setNotesMap(next)

@@ -1,0 +1,172 @@
+/* Telegram UI Rescue - 隔离样式变量系统 */
+:root {
+  /* === 基础颜色系统 === */
+  --tg-bg-primary: #ffffff;
+  --tg-bg-secondary: #f8f9fa;
+  --tg-bg-tertiary: #f1f3f4;
+  --tg-bg-overlay: rgba(0, 0, 0, 0.4);
+  
+  /* === 文本颜色系统 === */
+  --tg-text-primary: #111827;
+  --tg-text-secondary: #6b7280;
+  --tg-text-tertiary: #9ca3af;
+  --tg-text-inverse: #ffffff;
+  --tg-text-disabled: #d1d5db;
+  
+  /* === 品牌颜色系统 === */
+  --tg-brand-primary: #0a84ff;
+  --tg-brand-primary-hover: #0071e3;
+  --tg-brand-primary-active: #005bb5;
+  --tg-brand-secondary: #34c759;
+  --tg-brand-danger: #ff3b30;
+  --tg-brand-warning: #ff9500;
+  
+  /* === 边框颜色系统 === */
+  --tg-border-primary: #e5e7eb;
+  --tg-border-secondary: #d1d5db;
+  --tg-border-focus: #0a84ff;
+  --tg-border-error: #ff3b30;
+  --tg-border-success: #34c759;
+  
+  /* === 阴影系统 === */
+  --tg-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --tg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --tg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --tg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --tg-shadow-focus: 0 0 0 3px rgba(10, 132, 255, 0.1);
+  
+  /* === 圆角系统 === */
+  --tg-radius-sm: 4px;
+  --tg-radius-md: 8px;
+  --tg-radius-lg: 12px;
+  --tg-radius-xl: 16px;
+  --tg-radius-2xl: 20px;
+  --tg-radius-3xl: 24px;
+  --tg-radius-full: 9999px;
+  
+  /* === 间距系统 === */
+  --tg-space-1: 0.25rem;   /* 4px */
+  --tg-space-2: 0.5rem;    /* 8px */
+  --tg-space-3: 0.75rem;   /* 12px */
+  --tg-space-4: 1rem;      /* 16px */
+  --tg-space-5: 1.25rem;   /* 20px */
+  --tg-space-6: 1.5rem;    /* 24px */
+  --tg-space-8: 2rem;      /* 32px */
+  --tg-space-10: 2.5rem;   /* 40px */
+  --tg-space-12: 3rem;     /* 48px */
+  --tg-space-16: 4rem;     /* 64px */
+  
+  /* === 字体系统 === */
+  --tg-font-size-xs: 0.75rem;    /* 12px */
+  --tg-font-size-sm: 0.875rem;   /* 14px */
+  --tg-font-size-base: 1rem;     /* 16px */
+  --tg-font-size-lg: 1.125rem;   /* 18px */
+  --tg-font-size-xl: 1.25rem;    /* 20px */
+  --tg-font-size-2xl: 1.5rem;    /* 24px */
+  --tg-font-size-3xl: 1.875rem;  /* 30px */
+  
+  --tg-font-weight-normal: 400;
+  --tg-font-weight-medium: 500;
+  --tg-font-weight-semibold: 600;
+  --tg-font-weight-bold: 700;
+  
+  --tg-line-height-tight: 1.25;
+  --tg-line-height-normal: 1.5;
+  --tg-line-height-relaxed: 1.75;
+  
+  /* === 过渡动画系统 === */
+  --tg-transition-fast: 150ms ease-out;
+  --tg-transition-normal: 200ms ease-out;
+  --tg-transition-slow: 300ms ease-out;
+  --tg-transition-spring: 200ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* === 移动端安全区系统 === */
+  --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --tg-safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --tg-safe-area-inset-left: env(safe-area-inset-left, 0px);
+  
+  /* === 视口高度系统 === */
+  --tg-vh-100: 100vh;
+  --tg-dvh-100: 100dvh;
+  --tg-svh-100: 100svh;
+  --tg-lvh-100: 100lvh;
+  
+  /* === 组件特定变量 === */
+  /* 输入框 */
+  --tg-input-height-sm: 36px;
+  --tg-input-height-md: 44px;
+  --tg-input-height-lg: 52px;
+  --tg-input-padding-x: var(--tg-space-3);
+  --tg-input-padding-y: var(--tg-space-2);
+  --tg-input-border-width: 1px;
+  --tg-input-border-radius: var(--tg-radius-lg);
+  
+  /* 按钮 */
+  --tg-button-height-sm: 32px;
+  --tg-button-height-md: 40px;
+  --tg-button-height-lg: 48px;
+  --tg-button-padding-x: var(--tg-space-4);
+  --tg-button-padding-y: var(--tg-space-2);
+  --tg-button-border-radius: var(--tg-radius-md);
+  
+  /* 弹窗 */
+  --tg-modal-backdrop: var(--tg-bg-overlay);
+  --tg-modal-border-radius: var(--tg-radius-xl);
+  --tg-modal-shadow: var(--tg-shadow-xl);
+  --tg-modal-max-width: 400px;
+  --tg-modal-max-height: 80vh;
+  
+  /* === 可访问性增强 === */
+  --tg-focus-ring-width: 2px;
+  --tg-focus-ring-color: var(--tg-brand-primary);
+  --tg-focus-ring-offset: 2px;
+  
+  /* === 对比度保护 === */
+  --tg-contrast-ratio-min: 4.5; /* WCAG AA 标准 */
+  --tg-contrast-ratio-enhanced: 7; /* WCAG AAA 标准 */
+}
+
+/* === 暗色模式支持 === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tg-bg-primary: #1f2937;
+    --tg-bg-secondary: #111827;
+    --tg-bg-tertiary: #374151;
+    --tg-bg-overlay: rgba(0, 0, 0, 0.6);
+    
+    --tg-text-primary: #f9fafb;
+    --tg-text-secondary: #d1d5db;
+    --tg-text-tertiary: #9ca3af;
+    --tg-text-inverse: #111827;
+    --tg-text-disabled: #6b7280;
+    
+    --tg-border-primary: #374151;
+    --tg-border-secondary: #4b5563;
+    
+    --tg-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --tg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --tg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --tg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* === 高对比度模式支持 === */
+@media (prefers-contrast: high) {
+  :root {
+    --tg-border-primary: #000000;
+    --tg-border-secondary: #000000;
+    --tg-text-secondary: #000000;
+    --tg-focus-ring-width: 3px;
+  }
+}
+
+/* === 减少动画模式支持 === */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tg-transition-fast: 0ms;
+    --tg-transition-normal: 0ms;
+    --tg-transition-slow: 0ms;
+    --tg-transition-spring: 0ms;
+  }
+}

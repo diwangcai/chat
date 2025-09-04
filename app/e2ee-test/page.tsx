@@ -293,7 +293,7 @@ export default function E2EETestPage() {
                   </h3>
                   <div className="bg-gray-50 p-3 rounded-md">
                     <div className="text-sm text-gray-600">
-                      明文: "{decryptedMessage}"
+                      明文: &quot;{decryptedMessage}&quot;
                     </div>
                   </div>
                 </div>

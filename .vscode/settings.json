@@ -1,4 +1,7 @@
 {
     "markdown.validate.enabled": true,
-    "json.schemaDownload.enable": true
+    "json.schemaDownload.enable": true,
+    "markdown.validate.ignoredLinks": [
+        "LICENSE"
+    ]
 }

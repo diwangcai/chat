@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { CheckCheck, Lock, Copy, Reply, Star, Trash2 } from 'lucide-react'
+import { CheckCheck, Lock, Copy, Reply, Star, Trash2, Clock, Check, AlertCircle } from 'lucide-react'
 import { Message, User } from '@/types/chat'
 import { formatMessageTime } from '@/utils/date'
 import { cn } from '@/utils/cn'
@@ -47,10 +47,54 @@ export default function MessageItem({
   const isCurrentUser = message.senderId === currentUserId
 
   const renderStatus = () => {
-    // 锁定为两个对号显示，不再修改
+    const getStatusConfig = () => {
+      switch (message.status) {
+        case 'sending':
+          return { 
+            icon: <Clock className="w-3 h-3 animate-pulse" />, 
+            color: 'var(--status-sending)', 
+            text: '发送中' 
+          }
+        case 'sent':
+          return { 
+            icon: <Check className="w-3 h-3" />, 
+            color: 'var(--status-sent)', 
+            text: '已发送' 
+          }
+        case 'delivered':
+          return { 
+            icon: <CheckCheck className="w-3 h-3" />, 
+            color: 'var(--status-delivered)', 
+            text: '已送达' 
+          }
+        case 'read':
+          return { 
+            icon: <CheckCheck className="w-3 h-3" />, 
+            color: 'var(--status-read)', 
+            text: '已读' 
+          }
+        case 'failed':
+          return { 
+            icon: <AlertCircle className="w-3 h-3" />, 
+            color: 'var(--status-failed)', 
+            text: '发送失败' 
+          }
+        default:
+          return { 
+            icon: <Check className="w-3 h-3" />, 
+            color: 'var(--status-sent)', 
+            text: '已发送' 
+          }
+      }
+    }
+    
+    const config = getStatusConfig()
+    
     return (
       <div className="flex items-center space-x-1" data-testid="message-status">
-        <CheckCheck className="w-3 h-3 text-blue-500" />
+        <span style={{ color: config.color }}>
+          {config.icon}
+        </span>
       </div>
     )
   }

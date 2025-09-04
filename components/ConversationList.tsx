@@ -38,7 +38,7 @@ export default function ConversationList({ conversations, currentUserId, activeI
   return (
     <div className="h-full flex flex-col border-r" style={{ borderColor: 'var(--border)' }} data-testid="conversation-list">
       {/* 搜索 */}
-      <div className="p-3">
+      <div className="p-3 sticky top-0 z-10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2 bg-white rounded-xl border px-3 py-2 shadow-sm" style={{ borderColor: 'var(--border)' }}>
           <Search className="w-4 h-4 text-gray-400" />
           <input
