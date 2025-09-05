@@ -3,23 +3,39 @@
  * 基于 WebCrypto API 实现 X3DH-lite 协议
  */
 
-// 工具函数
+// 工具函数 - 安全版本，避免对象注入
 export function arrayBufferToBase64(buffer: ArrayBufferLike): string {
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]!)
+  if (!buffer || typeof buffer.byteLength !== 'number') {
+    throw new Error('Invalid buffer');
   }
-  return btoa(binary)
+  
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    const byte = bytes[i];
+    if (byte !== undefined) {
+      binary += String.fromCharCode(byte);
+    }
+  }
+  return btoa(binary);
 }
 
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
+  if (typeof base64 !== 'string') {
+    throw new Error('Invalid base64 string');
   }
-  return bytes.buffer
+  
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      const charCode = binaryString.charCodeAt(i);
+      bytes[i] = charCode;
+    }
+    return bytes.buffer;
+  } catch (error) {
+    throw new Error('Invalid base64 format');
+  }
 }
 
 export function concatArrayBuffers(...buffers: ArrayBuffer[]): ArrayBuffer {

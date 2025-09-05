@@ -73,13 +73,18 @@ export function useNotifications() {
 
   const playSound = useCallback(async (soundType: 'message' | 'mention' | 'call' = 'message') => {
     try {
-      const soundMap = {
-        message: '/sounds/message.mp3',
-        mention: '/sounds/mention.mp3',
-        call: '/sounds/call.mp3'
-      }
+      // 使用安全的映射，避免对象注入
+      const soundMap: Record<string, string> = Object.create(null)
+      soundMap['message'] = '/sounds/message.mp3'
+      soundMap['mention'] = '/sounds/mention.mp3'
+      soundMap['call'] = '/sounds/call.mp3'
 
-      const audio = new Audio(soundMap[soundType])
+      const soundPath = soundMap[soundType]
+      if (!soundPath) {
+        throw new Error(`Unknown sound type: ${soundType}`)
+      }
+      
+      const audio = new Audio(soundPath)
       audio.volume = 0.5
       await audio.play()
     } catch (error) {

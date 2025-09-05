@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "prebuild": "node scripts/ensure-icons.cjs",
     "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "eslint .",
+    "start": "next start -p 3000",
+    "lint": "eslint . --max-warnings=50",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest",
+    "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
@@ -37,6 +37,7 @@
     "tailwind-merge": "^2.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@modelcontextprotocol/server-filesystem": "^2025.8.21",
     "@playwright/test": "^1.55.0",
     "@types/node": "^20.8.0",
@@ -59,6 +60,7 @@
     "prettier": "^3.2.5",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zod": "^3.25.76"
   }
 }
