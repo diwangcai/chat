@@ -14,7 +14,7 @@ interface ConversationListProps {
   onSelect: (id: string) => void
 }
 
-export default function ConversationList({ conversations, currentUserId, activeId, onSelect }: ConversationListProps) {
+export default function ConversationList({ conversations, currentUserId, activeId: _activeId, onSelect }: ConversationListProps) {
   const [query, setQuery] = useState('')
   const items = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -54,7 +54,7 @@ export default function ConversationList({ conversations, currentUserId, activeI
       <div className="flex-1 overflow-y-auto">
         {items.map((c) => {
           const other = c.participants.find(p => p.id !== currentUserId) as User | undefined
-          const isActive = c.id === activeId
+          const isActive = c.id === _activeId
           return (
             <Link key={c.id} href={`/chats/${c.id}`} className="block" onClick={() => onSelect(c.id)}>
               <motion.div
